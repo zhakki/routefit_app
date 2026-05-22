@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "531464333470",
+    "project_id": "ilona-zakovits",
+    "storage_bucket": "ilona-zakovits.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:531464333470:android:8f82d8db54f1942e78b38f",
+        "android_client_info": {
+          "package_name": "com.example.routefit_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCG3-nm7Xr8VJF8bc88JL777h0RjSuypQo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
