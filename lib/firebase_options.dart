@@ -21,16 +21,19 @@ class DefaultFirebaseOptions {
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for android - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return android;
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        return macos;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for macos - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.windows:
-        return windows;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for windows - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -43,14 +46,12 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCjZutWctO3W1gS4QMENO3zvthxaFKqJQk',
-    appId: '1:531464333470:web:238623a67660339978b38f',
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyCG3-nm7Xr8VJF8bc88JL777h0RjSuypQo',
+    appId: '1:531464333470:android:8f82d8db54f1942e78b38f',
     messagingSenderId: '531464333470',
     projectId: 'ilona-zakovits',
-    authDomain: 'ilona-zakovits.firebaseapp.com',
     storageBucket: 'ilona-zakovits.firebasestorage.app',
-    measurementId: 'G-JBKE7TNKBE',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -62,22 +63,14 @@ class DefaultFirebaseOptions {
     iosBundleId: 'com.example.routefitApp',
   );
 
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyC1iO8Y9sQlAS86abjRgR5PUnbNAOCrGh8',
-    appId: '1:531464333470:ios:c16bec1917de5f3b78b38f',
-    messagingSenderId: '531464333470',
-    projectId: 'ilona-zakovits',
-    storageBucket: 'ilona-zakovits.firebasestorage.app',
-    iosBundleId: 'com.example.routefitApp',
-  );
-
-  static const FirebaseOptions windows = FirebaseOptions(
+  static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyB73cLyVct3g3yHu0iNblxyyLG50LUVvXM',
-    appId: '1:531464333470:web:b17570663e70408978b38f',
+    appId: '1:531464333470:web:1e344ca30c49b05778b38f',
     messagingSenderId: '531464333470',
     projectId: 'ilona-zakovits',
     authDomain: 'ilona-zakovits.firebaseapp.com',
     storageBucket: 'ilona-zakovits.firebasestorage.app',
-    measurementId: 'G-H8K1NTY4S1',
+    measurementId: 'G-GBR57G11GZ',
   );
+
 }
