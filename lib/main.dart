@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:routefit_app/screens/map_screen.dart';
 
 import 'firebase_options.dart';
 
@@ -30,7 +31,8 @@ class RouteFitApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      // home: const HomeScreen(),
+      home: MapScreen(),
     );
   }
 }
