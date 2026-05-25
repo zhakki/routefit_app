@@ -57,6 +57,7 @@ class _MapScreenState extends State<MapScreen> {
       body: _currentPos == null
           ? const Center(child: Text("Loading ..."))
           : GoogleMap(
+              myLocationEnabled: true,
               polylines: {
                 Polyline(
                   polylineId: PolylineId("id"),
@@ -71,13 +72,6 @@ class _MapScreenState extends State<MapScreen> {
                 target: _currentPos!,
                 zoom: DEFAULT_ZOOM,
               ),
-              markers: {
-                Marker(
-                  markerId: MarkerId("_currentPos"),
-                  icon: BitmapDescriptor.defaultMarker,
-                  position: _currentPos!,
-                ),
-              },
             ),
     );
   }
@@ -109,8 +103,8 @@ class _MapScreenState extends State<MapScreen> {
     }
     _locationController.changeSettings(
       accuracy: LocationAccuracy.high,
-      interval: 500,
-      distanceFilter: 0.5,
+      interval: 2000,
+      distanceFilter: 2,
     );
 
     _locationSubscription = _locationController.onLocationChanged.listen((
