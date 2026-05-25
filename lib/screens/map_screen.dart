@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:google_maps_flutter_android/google_maps_flutter_android.dart';
+import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
 import 'package:location/location.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -23,7 +25,6 @@ class _MapScreenState extends State<MapScreen> {
   //static const LatLng _vk = LatLng(59.40157830303976, 27.291015175644905);
   LatLng? _currentPos;
 
-  final Set<Polyline> _polyline = {};
   final List<LatLng> _pointsOnMap = [];
 
   @override
@@ -31,6 +32,15 @@ class _MapScreenState extends State<MapScreen> {
     super.initState();
     WakelockPlus.enable(); // Prevent the screen from sleeping while on the map
     getLocationsUpdates();
+    _initializeMapRenderer();
+  }
+
+  void _initializeMapRenderer() {
+    final GoogleMapsFlutterPlatform mapsImplementation =
+        GoogleMapsFlutterPlatform.instance;
+    if (mapsImplementation is GoogleMapsFlutterAndroid) {
+      mapsImplementation.useAndroidViewSurface = true;
+    }
   }
 
   @override
@@ -45,7 +55,14 @@ class _MapScreenState extends State<MapScreen> {
       body: _currentPos == null
           ? const Center(child: Text("Loading ..."))
           : GoogleMap(
-              polylines: _polyline,
+              polylines: {
+                Polyline(
+                  polylineId: PolylineId("id"),
+                  points: _pointsOnMap,
+                  color: Colors.blue,
+                  width: 5,
+                ),
+              },
               onMapCreated: ((GoogleMapController controller) =>
                   _mapController.complete(controller)),
               initialCameraPosition: CameraPosition(
@@ -93,7 +110,7 @@ class _MapScreenState extends State<MapScreen> {
       _locationController.changeSettings(
         accuracy: LocationAccuracy.high,
         interval: 500,
-        distanceFilter: 0.1,
+        distanceFilter: 0.5,
       );
 
       _locationController.onLocationChanged.listen((
@@ -106,26 +123,13 @@ class _MapScreenState extends State<MapScreen> {
               currentLocation.latitude!,
               currentLocation.longitude!,
             );
-            print(_currentPos);
+            //print(_currentPos);
             _cameraToPosition(_currentPos!);
             _pointsOnMap.add(_currentPos!);
-            print(_pointsOnMap.length);
-            _polyline.add(
-              Polyline(
-                polylineId: PolylineId("id"),
-                points: _pointsOnMap,
-                color: Colors.blue,
-              ),
-            );
+            //print(_pointsOnMap.length);
           });
         }
       });
     }
   }
-
-  /*Future<List<LatLng>> getPolylinePoints() async {
-    List<LatLng> polylineCoordinates = [];
-    PolylinePoints polylinePoints = PolylinePoints(apiKey: '');
-  }
-   */
 }
