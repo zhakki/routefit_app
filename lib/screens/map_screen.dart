@@ -18,6 +18,7 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   final Location _locationController = Location();
+  StreamSubscription<LocationData>? _locationSubscription;
 
   final Completer<GoogleMapController> _mapController =
       Completer<GoogleMapController>();
@@ -45,6 +46,7 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   void dispose() {
+    _locationSubscription?.cancel();
     WakelockPlus.disable(); // Allow the screen to sleep again when leaving the map
     super.dispose();
   }
@@ -96,40 +98,37 @@ class _MapScreenState extends State<MapScreen> {
     PermissionStatus permissionGranted;
 
     serviceEnabled = await _locationController.serviceEnabled();
-    if (serviceEnabled) {
+    if (!serviceEnabled) {
       serviceEnabled = await _locationController.requestService();
-    } else {
-      return;
+      if (!serviceEnabled) return;
     }
     permissionGranted = await _locationController.hasPermission();
     if (permissionGranted == PermissionStatus.denied) {
       permissionGranted = await _locationController.requestPermission();
-      if (permissionGranted != PermissionStatus.granted) {
-        return;
-      }
-      _locationController.changeSettings(
-        accuracy: LocationAccuracy.high,
-        interval: 500,
-        distanceFilter: 0.5,
-      );
-
-      _locationController.onLocationChanged.listen((
-        LocationData currentLocation,
-      ) {
-        if (currentLocation.latitude != null &&
-            currentLocation.longitude != null) {
-          setState(() {
-            _currentPos = LatLng(
-              currentLocation.latitude!,
-              currentLocation.longitude!,
-            );
-            //print(_currentPos);
-            _cameraToPosition(_currentPos!);
-            _pointsOnMap.add(_currentPos!);
-            //print(_pointsOnMap.length);
-          });
-        }
-      });
+      if (permissionGranted != PermissionStatus.granted) return;
     }
+    _locationController.changeSettings(
+      accuracy: LocationAccuracy.high,
+      interval: 500,
+      distanceFilter: 0.5,
+    );
+
+    _locationSubscription = _locationController.onLocationChanged.listen((
+      LocationData currentLocation,
+    ) {
+      if (currentLocation.latitude != null &&
+          currentLocation.longitude != null) {
+        setState(() {
+          _currentPos = LatLng(
+            currentLocation.latitude!,
+            currentLocation.longitude!,
+          );
+          //print(_currentPos);
+          _cameraToPosition(_currentPos!);
+          _pointsOnMap.add(_currentPos!);
+          //print(_pointsOnMap.length);
+        });
+      }
+    });
   }
 }
