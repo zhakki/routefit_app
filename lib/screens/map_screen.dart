@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:location/location.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+
+const double DEFAULT_ZOOM = 18;
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -10,12 +15,19 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  static const LatLng _vk = LatLng(59.40157830303976, 27.291015175644905);
+  Location _locationController = new Location();
+
+  final Completer<GoogleMapController> _mapController =
+      Completer<GoogleMapController>();
+
+  //static const LatLng _vk = LatLng(59.40157830303976, 27.291015175644905);
+  LatLng? _currentPos = null;
 
   @override
   void initState() {
     super.initState();
     WakelockPlus.enable(); // Prevent the screen from sleeping while on the map
+    getLocationsUpdates();
   }
 
   @override
@@ -27,15 +39,68 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GoogleMap(
-        initialCameraPosition: CameraPosition(target: _vk, zoom: 18),
-        markers: {
-          Marker(
-            markerId: MarkerId("_currentLocation "),
-            icon: BitmapDescriptor.defaultMarker,
-          ),
-        },
-      ),
+      body: _currentPos == null
+          ? const Center(child: Text("Loading ..."))
+          : GoogleMap(
+              onMapCreated: ((GoogleMapController controller) =>
+                  _mapController.complete(controller)),
+              initialCameraPosition: CameraPosition(
+                target: _currentPos!,
+                zoom: DEFAULT_ZOOM,
+              ),
+              markers: {
+                Marker(
+                  markerId: MarkerId("_currentPos"),
+                  icon: BitmapDescriptor.defaultMarker,
+                  position: _currentPos!,
+                ),
+              },
+            ),
     );
+  }
+
+  Future<void> _cameraToPosition(LatLng position) async {
+    final GoogleMapController controller = await _mapController.future;
+    CameraPosition _newCameraPosition = CameraPosition(
+      target: position,
+      zoom: DEFAULT_ZOOM,
+    );
+    await controller.animateCamera(
+      CameraUpdate.newCameraPosition(_newCameraPosition),
+    );
+  }
+
+  Future<void> getLocationsUpdates() async {
+    bool _serviceEnabled;
+    PermissionStatus _permissionGranted;
+
+    _serviceEnabled = await _locationController.serviceEnabled();
+    if (_serviceEnabled) {
+      _serviceEnabled = await _locationController.requestService();
+    } else {
+      return;
+    }
+    _permissionGranted = await _locationController.hasPermission();
+    if (_permissionGranted == PermissionStatus.denied) {
+      _permissionGranted = await _locationController.requestPermission();
+      if (_permissionGranted != PermissionStatus.granted) {
+        return;
+      }
+      _locationController.onLocationChanged.listen((
+        LocationData currentLocation,
+      ) {
+        if (currentLocation.latitude != null &&
+            currentLocation.longitude != null) {
+          setState(() {
+            _currentPos = LatLng(
+              currentLocation.latitude!,
+              currentLocation.longitude!,
+            );
+            //print(_currentPos);
+            _cameraToPosition(_currentPos!);
+          });
+        }
+      });
+    }
   }
 }
