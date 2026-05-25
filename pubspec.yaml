@@ -43,6 +43,7 @@ dependencies:
   google_maps_flutter: ^2.10.0
   wakelock_plus: ^1.2.8
   location: ^7.0.1
+  flutter_polyline_points: ^3.0.1
 
 dev_dependencies:
   flutter_test:
