@@ -25,8 +25,8 @@ class _MapScreenState extends State<MapScreen> {
 
   //static const LatLng _vk = LatLng(59.40157830303976, 27.291015175644905);
   LatLng? _currentPos;
-
   final List<LatLng> _pointsOnMap = [];
+  bool _isTracking = false;
 
   @override
   void initState() {
@@ -54,25 +54,62 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _currentPos == null
-          ? const Center(child: Text("Loading ..."))
-          : GoogleMap(
-              myLocationEnabled: true,
-              polylines: {
-                Polyline(
-                  polylineId: PolylineId("id"),
-                  points: _pointsOnMap,
-                  color: Colors.blue,
-                  width: 5,
+      body: Stack(
+        children: [
+          _currentPos == null
+              ? const Center(child: Text("Loading ..."))
+              : GoogleMap(
+                  myLocationEnabled: true,
+                  polylines: {
+                    Polyline(
+                      polylineId: const PolylineId("id"),
+                      points: _pointsOnMap,
+                      color: Colors.blue,
+                      width: 5,
+                    ),
+                  },
+                  onMapCreated: ((GoogleMapController controller) =>
+                      _mapController.complete(controller)),
+                  initialCameraPosition: CameraPosition(
+                    target: _currentPos!,
+                    zoom: DEFAULT_ZOOM,
+                  ),
                 ),
-              },
-              onMapCreated: ((GoogleMapController controller) =>
-                  _mapController.complete(controller)),
-              initialCameraPosition: CameraPosition(
-                target: _currentPos!,
-                zoom: DEFAULT_ZOOM,
+          if (_currentPos != null)
+            Align(
+              alignment: Alignment.bottomLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 40.0, bottom: 40.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: _isTracking ? Colors.red : Colors.green,
+                      width: 2,
+                    ),
+                  ),
+                  child: FloatingActionButton(
+                    onPressed: () {
+                      setState(() {
+                        _isTracking = !_isTracking;
+                      });
+                    },
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    highlightElevation: 0,
+                    hoverElevation: 0,
+                    splashColor: (_isTracking ? Colors.red : Colors.green)
+                        .withValues(alpha: 0.2),
+                    child: Icon(
+                      _isTracking ? Icons.stop : Icons.play_arrow,
+                      color: _isTracking ? Colors.red : Colors.green,
+                    ),
+                  ),
+                ),
               ),
             ),
+        ],
+      ),
     );
   }
 
@@ -117,10 +154,10 @@ class _MapScreenState extends State<MapScreen> {
             currentLocation.latitude!,
             currentLocation.longitude!,
           );
-          //print(_currentPos);
           _cameraToPosition(_currentPos!);
-          _pointsOnMap.add(_currentPos!);
-          //print(_pointsOnMap.length);
+          if (_isTracking) {
+            _pointsOnMap.add(_currentPos!);
+          }
         });
       }
     });
