@@ -15,13 +15,16 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  Location _locationController = new Location();
+  final Location _locationController = Location();
 
   final Completer<GoogleMapController> _mapController =
       Completer<GoogleMapController>();
 
   //static const LatLng _vk = LatLng(59.40157830303976, 27.291015175644905);
-  LatLng? _currentPos = null;
+  LatLng? _currentPos;
+
+  final Set<Polyline> _polyline = {};
+  final List<LatLng> _pointsOnMap = [];
 
   @override
   void initState() {
@@ -42,6 +45,7 @@ class _MapScreenState extends State<MapScreen> {
       body: _currentPos == null
           ? const Center(child: Text("Loading ..."))
           : GoogleMap(
+              polylines: _polyline,
               onMapCreated: ((GoogleMapController controller) =>
                   _mapController.complete(controller)),
               initialCameraPosition: CameraPosition(
@@ -61,31 +65,37 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _cameraToPosition(LatLng position) async {
     final GoogleMapController controller = await _mapController.future;
-    CameraPosition _newCameraPosition = CameraPosition(
+    CameraPosition newCameraPosition = CameraPosition(
       target: position,
       zoom: DEFAULT_ZOOM,
     );
     await controller.animateCamera(
-      CameraUpdate.newCameraPosition(_newCameraPosition),
+      CameraUpdate.newCameraPosition(newCameraPosition),
     );
   }
 
   Future<void> getLocationsUpdates() async {
-    bool _serviceEnabled;
-    PermissionStatus _permissionGranted;
+    bool serviceEnabled;
+    PermissionStatus permissionGranted;
 
-    _serviceEnabled = await _locationController.serviceEnabled();
-    if (_serviceEnabled) {
-      _serviceEnabled = await _locationController.requestService();
+    serviceEnabled = await _locationController.serviceEnabled();
+    if (serviceEnabled) {
+      serviceEnabled = await _locationController.requestService();
     } else {
       return;
     }
-    _permissionGranted = await _locationController.hasPermission();
-    if (_permissionGranted == PermissionStatus.denied) {
-      _permissionGranted = await _locationController.requestPermission();
-      if (_permissionGranted != PermissionStatus.granted) {
+    permissionGranted = await _locationController.hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await _locationController.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) {
         return;
       }
+      _locationController.changeSettings(
+        accuracy: LocationAccuracy.high,
+        interval: 500,
+        distanceFilter: 0.1,
+      );
+
       _locationController.onLocationChanged.listen((
         LocationData currentLocation,
       ) {
@@ -96,11 +106,26 @@ class _MapScreenState extends State<MapScreen> {
               currentLocation.latitude!,
               currentLocation.longitude!,
             );
-            //print(_currentPos);
+            print(_currentPos);
             _cameraToPosition(_currentPos!);
+            _pointsOnMap.add(_currentPos!);
+            print(_pointsOnMap.length);
+            _polyline.add(
+              Polyline(
+                polylineId: PolylineId("id"),
+                points: _pointsOnMap,
+                color: Colors.blue,
+              ),
+            );
           });
         }
       });
     }
   }
+
+  /*Future<List<LatLng>> getPolylinePoints() async {
+    List<LatLng> polylineCoordinates = [];
+    PolylinePoints polylinePoints = PolylinePoints(apiKey: '');
+  }
+   */
 }
