@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -14,24 +15,53 @@ class TrackingProvider extends ChangeNotifier {
   Stopwatch _stopwatch = Stopwatch();
   Timer? _timer;
   Duration _duration = Duration.zero;
+  double _totalDistance = 0.0;
 
   // Getters
   bool get isTracking => _isTracking;
   List<LatLng> get routePoints => _routePoints;
   Duration get duration => _duration;
+  double get totalDistance => _totalDistance;
+
+  double _calculateDistance(LatLng p1, LatLng p2) {
+    var p = 0.017453292519943295;
+    var c = cos;
+    var a =
+        0.5 -
+        c((p2.latitude - p1.latitude) * p) / 2 +
+        c(p1.latitude * p) *
+            c(p2.latitude * p) *
+            (1 - c((p2.longitude - p1.longitude) * p)) /
+            2;
+    return 12742000 * asin(sqrt(a)); // 2 * R; R = 6371000 meters
+  }
+
+  double calculateRouteDistance() {
+    double distance = 0.0;
+    for (int i = 0; i < _routePoints.length - 1; i++) {
+      distance += _calculateDistance(_routePoints[i], _routePoints[i + 1]);
+    }
+    return distance; // Returns distance in meters
+  }
+
+  void _addPoint(LatLng point) {
+    if (_routePoints.isNotEmpty) {
+      _totalDistance += _calculateDistance(_routePoints.last, point);
+    }
+    _routePoints.add(point);
+  }
 
   Future<void> startTracking() async {
     if (_isTracking) return;
 
     _routePoints.clear();
+    _totalDistance = 0.0;
 
     // Get current location to start the path immediately
     try {
       final locationData = await _locationController.getLocation();
       if (locationData.latitude != null && locationData.longitude != null) {
-        _routePoints.add(
-          LatLng(locationData.latitude!, locationData.longitude!),
-        );
+        _addPoint(LatLng(locationData.latitude!, locationData.longitude!));
       }
     } catch (e) {
       debugPrint("Could not get initial location: $e");
@@ -59,9 +89,7 @@ class TrackingProvider extends ChangeNotifier {
     try {
       final locationData = await _locationController.getLocation();
       if (locationData.latitude != null && locationData.longitude != null) {
-        _routePoints.add(
-          LatLng(locationData.latitude!, locationData.longitude!),
-        );
+        _addPoint(LatLng(locationData.latitude!, locationData.longitude!));
       }
     } catch (e) {
       debugPrint("Could not get final location: $e");
@@ -71,6 +99,7 @@ class TrackingProvider extends ChangeNotifier {
     _stopwatch.stop();
     _timer?.cancel();
     _locationSubscription?.cancel();
+
     notifyListeners();
   }
 
@@ -88,8 +117,7 @@ class TrackingProvider extends ChangeNotifier {
       if (location.latitude != null && location.longitude != null) {
         final pos = LatLng(location.latitude!, location.longitude!);
         if (_isTracking) {
-          _routePoints.add(pos);
-          notifyListeners();
+          _addPoint(pos);
         }
       }
     });
