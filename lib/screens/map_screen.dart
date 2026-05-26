@@ -5,7 +5,10 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_maps_flutter_android/google_maps_flutter_android.dart';
 import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
 import 'package:location/location.dart';
+import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+
+import '../providers/tracking_provider.dart';
 
 const double DEFAULT_ZOOM = 18;
 
@@ -18,21 +21,17 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   final Location _locationController = Location();
-  StreamSubscription<LocationData>? _locationSubscription;
-
   final Completer<GoogleMapController> _mapController =
       Completer<GoogleMapController>();
 
-  //static const LatLng _vk = LatLng(59.40157830303976, 27.291015175644905);
   LatLng? _currentPos;
-  final List<LatLng> _pointsOnMap = [];
-  bool _isTracking = false;
+  StreamSubscription<LocationData>? _uiLocationSubscription;
 
   @override
   void initState() {
     super.initState();
-    WakelockPlus.enable(); // Prevent the screen from sleeping while on the map
-    getLocationsUpdates();
+    WakelockPlus.enable();
+    _checkLocationPermissions();
     _initializeMapRenderer();
   }
 
@@ -46,35 +45,114 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   void dispose() {
-    _locationSubscription?.cancel();
-    WakelockPlus.disable(); // Allow the screen to sleep again when leaving the map
+    _uiLocationSubscription?.cancel();
+    WakelockPlus.disable();
     super.dispose();
+  }
+
+  Future<void> _checkLocationPermissions() async {
+    bool serviceEnabled = await _locationController.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await _locationController.requestService();
+      if (!serviceEnabled) return;
+    }
+
+    PermissionStatus permissionGranted = await _locationController
+        .hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await _locationController.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) return;
+    }
+
+    // Get initial position
+    final locationData = await _locationController.getLocation();
+    if (mounted) {
+      setState(() {
+        _currentPos = LatLng(locationData.latitude!, locationData.longitude!);
+      });
+    }
+
+    // Listen for current position updates just for UI display (the blue dot/marker)
+    _uiLocationSubscription = _locationController.onLocationChanged.listen((
+      location,
+    ) {
+      if (location.latitude != null && location.longitude != null && mounted) {
+        setState(() {
+          _currentPos = LatLng(location.latitude!, location.longitude!);
+        });
+      }
+    });
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    String hours = twoDigits(duration.inHours);
+    String minutes = twoDigits(duration.inMinutes.remainder(60));
+    String seconds = twoDigits(duration.inSeconds.remainder(60));
+    return hours == "00" ? "$minutes:$seconds" : "$hours:$minutes:$seconds";
   }
 
   @override
   Widget build(BuildContext context) {
+    final trackingProvider = Provider.of<TrackingProvider>(context);
+
     return Scaffold(
       body: Stack(
         children: [
           _currentPos == null
-              ? const Center(child: Text("Loading ..."))
+              ? const Center(child: CircularProgressIndicator())
               : GoogleMap(
                   myLocationEnabled: true,
+                  myLocationButtonEnabled: true,
                   polylines: {
                     Polyline(
                       polylineId: const PolylineId("id"),
-                      points: _pointsOnMap,
+                      points: trackingProvider.routePoints,
                       color: Colors.blue,
                       width: 5,
                     ),
                   },
-                  onMapCreated: ((GoogleMapController controller) =>
-                      _mapController.complete(controller)),
+                  onMapCreated: (controller) =>
+                      _mapController.complete(controller),
                   initialCameraPosition: CameraPosition(
                     target: _currentPos!,
                     zoom: DEFAULT_ZOOM,
                   ),
                 ),
+
+          // Timer display
+          if (trackingProvider.isTracking)
+            Positioned(
+              top: 50,
+              left: 20,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  _formatDuration(trackingProvider.duration),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Courier', // Monospaced font for timer
+                  ),
+                ),
+              ),
+            ),
+
+          // Control Button
           if (_currentPos != null)
             Align(
               alignment: Alignment.bottomLeft,
@@ -84,25 +162,30 @@ class _MapScreenState extends State<MapScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: _isTracking ? Colors.red : Colors.green,
+                      color: trackingProvider.isTracking
+                          ? Colors.red
+                          : Colors.green,
                       width: 2,
                     ),
                   ),
                   child: FloatingActionButton(
+                    heroTag: "trackBtn",
                     onPressed: () {
-                      setState(() {
-                        _isTracking = !_isTracking;
-                      });
+                      if (trackingProvider.isTracking) {
+                        trackingProvider.stopTracking();
+                      } else {
+                        trackingProvider.startTracking();
+                      }
                     },
                     backgroundColor: Colors.transparent,
                     elevation: 0,
-                    highlightElevation: 0,
-                    hoverElevation: 0,
-                    splashColor: (_isTracking ? Colors.red : Colors.green)
-                        .withValues(alpha: 0.2),
                     child: Icon(
-                      _isTracking ? Icons.stop : Icons.play_arrow,
-                      color: _isTracking ? Colors.red : Colors.green,
+                      trackingProvider.isTracking
+                          ? Icons.stop
+                          : Icons.play_arrow,
+                      color: trackingProvider.isTracking
+                          ? Colors.red
+                          : Colors.green,
                     ),
                   ),
                 ),
@@ -111,55 +194,5 @@ class _MapScreenState extends State<MapScreen> {
         ],
       ),
     );
-  }
-
-  Future<void> _cameraToPosition(LatLng position) async {
-    final GoogleMapController controller = await _mapController.future;
-    CameraPosition newCameraPosition = CameraPosition(
-      target: position,
-      zoom: DEFAULT_ZOOM,
-    );
-    await controller.animateCamera(
-      CameraUpdate.newCameraPosition(newCameraPosition),
-    );
-  }
-
-  Future<void> getLocationsUpdates() async {
-    bool serviceEnabled;
-    PermissionStatus permissionGranted;
-
-    serviceEnabled = await _locationController.serviceEnabled();
-    if (!serviceEnabled) {
-      serviceEnabled = await _locationController.requestService();
-      if (!serviceEnabled) return;
-    }
-    permissionGranted = await _locationController.hasPermission();
-    if (permissionGranted == PermissionStatus.denied) {
-      permissionGranted = await _locationController.requestPermission();
-      if (permissionGranted != PermissionStatus.granted) return;
-    }
-    _locationController.changeSettings(
-      accuracy: LocationAccuracy.high,
-      interval: 2000,
-      distanceFilter: 2,
-    );
-
-    _locationSubscription = _locationController.onLocationChanged.listen((
-      LocationData currentLocation,
-    ) {
-      if (currentLocation.latitude != null &&
-          currentLocation.longitude != null) {
-        setState(() {
-          _currentPos = LatLng(
-            currentLocation.latitude!,
-            currentLocation.longitude!,
-          );
-          _cameraToPosition(_currentPos!);
-          if (_isTracking) {
-            _pointsOnMap.add(_currentPos!);
-          }
-        });
-      }
-    });
   }
 }
