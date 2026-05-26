@@ -87,12 +87,14 @@ class TrackingProvider extends ChangeNotifier {
 
     // Get current location to finalize the path
     try {
-      final locationData = await _locationController.getLocation();
+      final locationData = await _locationController.getLocation().timeout(
+        const Duration(seconds: 2),
+      );
       if (locationData.latitude != null && locationData.longitude != null) {
         _addPoint(LatLng(locationData.latitude!, locationData.longitude!));
       }
     } catch (e) {
-      debugPrint("Could not get final location: $e");
+      debugPrint("Could not get final location (timeout or error): $e");
     }
 
     _isTracking = false;
