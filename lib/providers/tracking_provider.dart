@@ -19,8 +19,11 @@ class TrackingProvider extends ChangeNotifier {
 
   // Getters
   bool get isTracking => _isTracking;
+
   List<LatLng> get routePoints => _routePoints;
+
   Duration get duration => _duration;
+
   double get totalDistance => _totalDistance;
 
   double _calculateDistance(LatLng p1, LatLng p2) {
@@ -56,6 +59,19 @@ class TrackingProvider extends ChangeNotifier {
 
     _routePoints.clear();
     _totalDistance = 0.0;
+
+    // Enable background mode and notification for background tracking
+    try {
+      await _locationController.enableBackgroundMode(enable: true);
+      await _locationController.changeNotificationOptions(
+        title: 'RouteFit is active',
+        subtitle: 'Tracking your route in the background',
+        onTapBringToFront: true,
+      );
+      debugPrint("Enabled background mode");
+    } catch (e) {
+      debugPrint("Error enabling background mode: $e");
+    }
 
     // Get current location to start the path immediately
     try {
@@ -101,6 +117,13 @@ class TrackingProvider extends ChangeNotifier {
     _stopwatch.stop();
     _timer?.cancel();
     _locationSubscription?.cancel();
+
+    // Disable background mode when tracking stops
+    try {
+      await _locationController.enableBackgroundMode(enable: false);
+    } catch (e) {
+      debugPrint("Error disabling background mode: $e");
+    }
 
     notifyListeners();
   }

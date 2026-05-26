@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../providers/tracking_provider.dart';
+import '../utils/permission_helper.dart';
 
 const double DEFAULT_ZOOM = 18;
 
@@ -200,11 +201,28 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                   child: FloatingActionButton(
                     heroTag: "trackBtn",
-                    onPressed: () {
+                    onPressed: () async {
                       if (trackingProvider.isTracking) {
                         trackingProvider.stopTracking();
                       } else {
-                        trackingProvider.startTracking();
+                        // Use the permission helper
+                        bool hasBgPerm =
+                            await PermissionHelper.requestBackgroundLocationPermission(
+                              context,
+                            );
+                        if (hasBgPerm) {
+                          trackingProvider.startTracking();
+                        } else {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Background permission required to start tracking.",
+                                ),
+                              ),
+                            );
+                          }
+                        }
                       }
                     },
                     backgroundColor: Colors.transparent,
