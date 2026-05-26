@@ -20,11 +20,24 @@ class TrackingProvider extends ChangeNotifier {
   List<LatLng> get routePoints => _routePoints;
   Duration get duration => _duration;
 
-  void startTracking() {
+  Future<void> startTracking() async {
     if (_isTracking) return;
 
-    _isTracking = true;
     _routePoints.clear();
+
+    // Get current location to start the path immediately
+    try {
+      final locationData = await _locationController.getLocation();
+      if (locationData.latitude != null && locationData.longitude != null) {
+        _routePoints.add(
+          LatLng(locationData.latitude!, locationData.longitude!),
+        );
+      }
+    } catch (e) {
+      debugPrint("Could not get initial location: $e");
+    }
+
+    _isTracking = true;
     _duration = Duration.zero;
     _stopwatch.reset();
     _stopwatch.start();
@@ -39,8 +52,20 @@ class TrackingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void stopTracking() {
+  Future<void> stopTracking() async {
     if (!_isTracking) return;
+
+    // Get current location to finalize the path
+    try {
+      final locationData = await _locationController.getLocation();
+      if (locationData.latitude != null && locationData.longitude != null) {
+        _routePoints.add(
+          LatLng(locationData.latitude!, locationData.longitude!),
+        );
+      }
+    } catch (e) {
+      debugPrint("Could not get final location: $e");
+    }
 
     _isTracking = false;
     _stopwatch.stop();
