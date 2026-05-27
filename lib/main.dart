@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:routefit_app/providers/tracking_provider.dart';
-import 'package:routefit_app/screens/map_screen.dart';
 
 import 'firebase_options.dart';
 import 'screens/login_screen.dart';
