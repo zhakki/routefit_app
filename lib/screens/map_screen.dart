@@ -37,6 +37,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
   LatLng? _currentPos;
   StreamSubscription<LocationData>? _uiLocationSubscription;
+  bool _followUser = true;
 
   @override
   void initState() {
@@ -88,11 +89,21 @@ class _TrackingScreenState extends State<TrackingScreen> {
       location,
     ) {
       if (location.latitude != null && location.longitude != null && mounted) {
+        final newPos = LatLng(location.latitude!, location.longitude!);
         setState(() {
-          _currentPos = LatLng(location.latitude!, location.longitude!);
+          _currentPos = newPos;
         });
+
+        if (_followUser) {
+          _updateCameraPosition(newPos);
+        }
       }
     });
+  }
+
+  Future<void> _updateCameraPosition(LatLng position) async {
+    final GoogleMapController controller = await _mapController.future;
+    controller.animateCamera(CameraUpdate.newLatLng(position));
   }
 
   void _stopRoute(TrackingProvider trackingProvider) {
@@ -150,6 +161,12 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         target: _currentPos!,
                         zoom: DEFAULT_ZOOM,
                       ),
+                      onCameraMoveStarted: () {
+                        // If user starts moving the map manually, stop following
+                        if (_followUser) {
+                          setState(() => _followUser = false);
+                        }
+                      },
                     ),
             ),
             Positioned.fill(
@@ -177,10 +194,24 @@ class _TrackingScreenState extends State<TrackingScreen> {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         _TopStats(
                           distanceKm: trackingProvider.totalDistance / 1000,
                           duration: trackingProvider.duration,
+                        ),
+                        const SizedBox(height: 16),
+                        _MapToolButton(
+                          icon: _followUser
+                              ? Icons.my_location
+                              : Icons.location_searching,
+                          active: _followUser,
+                          onPressed: () {
+                            setState(() => _followUser = true);
+                            if (_currentPos != null) {
+                              _updateCameraPosition(_currentPos!);
+                            }
+                          },
                         ),
                         const Spacer(),
                         _RouteControlPanel(
@@ -539,6 +570,39 @@ class _RoundRouteButton extends StatelessWidget {
             child: Icon(icon, color: foreground, size: 36),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _MapToolButton extends StatelessWidget {
+  const _MapToolButton({
+    required this.icon,
+    this.active = false,
+    this.onPressed,
+  });
+
+  final IconData icon;
+  final bool active;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        width: 52,
+        height: 52,
+        decoration: BoxDecoration(
+          color: active ? _lime.withValues(alpha: 0.2) : _cardColor,
+          shape: BoxShape.circle,
+          border: Border.all(color: active ? _lime : _lineColor),
+          boxShadow: [
+            if (active)
+              const BoxShadow(color: Color(0x3335F46E), blurRadius: 12),
+          ],
+        ),
+        child: Icon(icon, color: active ? _lime : _textMuted, size: 28),
       ),
     );
   }
