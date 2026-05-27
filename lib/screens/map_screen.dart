@@ -1,7 +1,15 @@
-import 'dart:math' as math;
+import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:google_maps_flutter_android/google_maps_flutter_android.dart';
+import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
+import 'package:location/location.dart';
+import 'package:provider/provider.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../providers/tracking_provider.dart';
+import '../utils/permission_helper.dart';
 import '../widgets/route_data.dart';
 import 'result_screen.dart';
 
@@ -13,6 +21,8 @@ const _lime = Color(0xFFB6FF00);
 const _textMuted = Color(0xFFD0D6C9);
 const _stopColor = Color(0xFFFFA8A1);
 
+const double DEFAULT_ZOOM = 18;
+
 class TrackingScreen extends StatefulWidget {
   const TrackingScreen({super.key});
 
@@ -21,32 +31,95 @@ class TrackingScreen extends StatefulWidget {
 }
 
 class _TrackingScreenState extends State<TrackingScreen> {
-  bool _tracking = false;
+  final Location _locationController = Location();
+  final Completer<GoogleMapController> _mapController =
+      Completer<GoogleMapController>();
 
-  RouteSummary get _activeRoute => RouteSummary(
-    title: 'Uus marsruut',
-    date: DateTime(2026, 5, 22),
-    startTime: const TimeOfDay(hour: 19, minute: 12),
-    endTime: const TimeOfDay(hour: 19, minute: 43),
-    distanceKm: _tracking ? 2.84 : 0,
-    duration: _tracking
-        ? const Duration(minutes: 27, seconds: 20)
-        : Duration.zero,
-    steps: _tracking ? 3820 : 0,
-    calories: _tracking ? 310 : 0,
-    averageSpeed: _tracking ? 6.2 : 0,
-  );
+  LatLng? _currentPos;
+  StreamSubscription<LocationData>? _uiLocationSubscription;
 
-  void _stopRoute() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ResultScreen(route: _activeRoute)),
+  @override
+  void initState() {
+    super.initState();
+    WakelockPlus.enable();
+    _checkLocationPermissions();
+    _initializeMapRenderer();
+  }
+
+  void _initializeMapRenderer() {
+    final GoogleMapsFlutterPlatform mapsImplementation =
+        GoogleMapsFlutterPlatform.instance;
+    if (mapsImplementation is GoogleMapsFlutterAndroid) {
+      mapsImplementation.useAndroidViewSurface = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    _uiLocationSubscription?.cancel();
+    WakelockPlus.disable();
+    super.dispose();
+  }
+
+  Future<void> _checkLocationPermissions() async {
+    bool serviceEnabled = await _locationController.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await _locationController.requestService();
+      if (!serviceEnabled) return;
+    }
+
+    PermissionStatus permissionGranted = await _locationController
+        .hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await _locationController.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) return;
+    }
+
+    // Get initial position
+    final locationData = await _locationController.getLocation();
+    if (mounted) {
+      setState(() {
+        _currentPos = LatLng(locationData.latitude!, locationData.longitude!);
+      });
+    }
+
+    // Listen for current position updates for UI display
+    _uiLocationSubscription = _locationController.onLocationChanged.listen((
+      location,
+    ) {
+      if (location.latitude != null && location.longitude != null && mounted) {
+        setState(() {
+          _currentPos = LatLng(location.latitude!, location.longitude!);
+        });
+      }
+    });
+  }
+
+  void _stopRoute(TrackingProvider trackingProvider) {
+    final routeSummary = RouteSummary(
+      title: 'Uus marsruut',
+      date: DateTime.now(),
+      startTime: TimeOfDay.now(), // Simplified
+      endTime: TimeOfDay.now(),
+      distanceKm: trackingProvider.totalDistance / 1000,
+      duration: trackingProvider.duration,
+      steps: 0, // Need step provider for this
+      calories: 0,
+      averageSpeed:
+          (trackingProvider.totalDistance / 1000) /
+          (trackingProvider.duration.inSeconds / 3600),
     );
-    setState(() => _tracking = false);
+
+    trackingProvider.stopTracking();
+
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ResultScreen(route: routeSummary)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final route = _activeRoute;
+    final trackingProvider = Provider.of<TrackingProvider>(context);
 
     return DecoratedBox(
       decoration: const BoxDecoration(color: _background),
@@ -54,7 +127,31 @@ class _TrackingScreenState extends State<TrackingScreen> {
         bottom: false,
         child: Stack(
           children: [
-            const Positioned.fill(top: 90, child: _MapSurface()),
+            Positioned.fill(
+              top: 90,
+              child: _currentPos == null
+                  ? const Center(child: CircularProgressIndicator(color: _lime))
+                  : GoogleMap(
+                      myLocationEnabled: true,
+                      myLocationButtonEnabled: false,
+                      zoomControlsEnabled: false,
+                      mapToolbarEnabled: false,
+                      polylines: {
+                        Polyline(
+                          polylineId: const PolylineId("route"),
+                          points: trackingProvider.routePoints,
+                          color: _lime,
+                          width: 5,
+                        ),
+                      },
+                      onMapCreated: (controller) =>
+                          _mapController.complete(controller),
+                      initialCameraPosition: CameraPosition(
+                        target: _currentPos!,
+                        zoom: DEFAULT_ZOOM,
+                      ),
+                    ),
+            ),
             Positioned.fill(
               top: 90,
               child: IgnorePointer(
@@ -81,12 +178,39 @@ class _TrackingScreenState extends State<TrackingScreen> {
                     padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
                     child: Column(
                       children: [
-                        _TopStats(route: route),
+                        _TopStats(
+                          distanceKm: trackingProvider.totalDistance / 1000,
+                          duration: trackingProvider.duration,
+                        ),
                         const Spacer(),
                         _RouteControlPanel(
-                          tracking: _tracking,
-                          onPause: () => setState(() => _tracking = !_tracking),
-                          onStop: _tracking ? _stopRoute : null,
+                          tracking: trackingProvider.isTracking,
+                          onPause: () async {
+                            if (trackingProvider.isTracking) {
+                              trackingProvider.stopTracking();
+                            } else {
+                              bool hasBgPerm =
+                                  await PermissionHelper.requestBackgroundLocationPermission(
+                                    context,
+                                  );
+                              if (hasBgPerm) {
+                                trackingProvider.startTracking();
+                              } else {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        "Background permission required to start tracking.",
+                                      ),
+                                    ),
+                                  );
+                                }
+                              }
+                            }
+                          },
+                          onStop: trackingProvider.isTracking
+                              ? () => _stopRoute(trackingProvider)
+                              : null,
                         ),
                       ],
                     ),
@@ -151,9 +275,10 @@ class _MapHeader extends StatelessWidget {
 }
 
 class _TopStats extends StatelessWidget {
-  const _TopStats({required this.route});
+  const _TopStats({required this.distanceKm, required this.duration});
 
-  final RouteSummary route;
+  final double distanceKm;
+  final Duration duration;
 
   @override
   Widget build(BuildContext context) {
@@ -162,7 +287,7 @@ class _TopStats extends StatelessWidget {
         Expanded(
           child: _StatGlassCard(
             label: 'Tempo',
-            value: _formatPace(route),
+            value: _formatPace(distanceKm, duration),
             suffix: '/km',
           ),
         ),
@@ -170,16 +295,13 @@ class _TopStats extends StatelessWidget {
         Expanded(
           child: _StatGlassCard(
             label: 'Vahemaa',
-            value: route.distanceKm.toStringAsFixed(2),
+            value: distanceKm.toStringAsFixed(2),
             suffix: 'km',
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _StatGlassCard(
-            label: 'Aeg',
-            value: formatDuration(route.duration),
-          ),
+          child: _StatGlassCard(label: 'Aeg', value: formatDuration(duration)),
         ),
       ],
     );
@@ -422,217 +544,9 @@ class _RoundRouteButton extends StatelessWidget {
   }
 }
 
-class _MapSurface extends StatelessWidget {
-  const _MapSurface();
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned.fill(child: CustomPaint(painter: _MapPainter())),
-        Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: const Color(0xFF6D8481).withValues(alpha: 0.36),
-            ),
-          ),
-        ),
-        const Positioned(
-          left: 0,
-          right: 0,
-          top: 250,
-          child: Text(
-            'San Francisco',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Color(0xCC0B1111),
-              fontSize: 46,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0,
-            ),
-          ),
-        ),
-        const Positioned(
-          right: 22,
-          top: 190,
-          child: _MapToolButton(icon: Icons.layers_outlined),
-        ),
-        const Positioned(
-          right: 22,
-          top: 268,
-          child: _MapToolButton(icon: Icons.my_location),
-        ),
-      ],
-    );
-  }
-}
-
-class _MapToolButton extends StatelessWidget {
-  const _MapToolButton({required this.icon});
-
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 52,
-      height: 52,
-      decoration: BoxDecoration(
-        color: const Color(0x802B3E45),
-        shape: BoxShape.circle,
-        border: Border.all(color: const Color(0x283BEA72)),
-      ),
-      child: Icon(icon, color: const Color(0xAA2D3C3D), size: 28),
-    );
-  }
-}
-
-class _MapPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final waterPaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topRight,
-        end: Alignment.bottomLeft,
-        colors: [Color(0xFF6EBCC4), Color(0xFFCAD6CE), Color(0xFF77AEB4)],
-      ).createShader(Offset.zero & size);
-    canvas.drawRect(Offset.zero & size, waterPaint);
-
-    final landPaint = Paint()..color = const Color(0xFFC9D1C6);
-    final parkPaint = Paint()..color = const Color(0xFF83B493);
-    final roadPaint = Paint()
-      ..color = const Color(0xAA788995)
-      ..strokeWidth = 7
-      ..strokeCap = StrokeCap.round;
-    final smallRoadPaint = Paint()
-      ..color = const Color(0x6692A0A6)
-      ..strokeWidth = 2;
-
-    final land = Path()
-      ..moveTo(0, size.height * 0.12)
-      ..lineTo(size.width * 0.84, size.height * 0.03)
-      ..quadraticBezierTo(
-        size.width * 0.72,
-        size.height * 0.28,
-        size.width * 0.88,
-        size.height * 0.48,
-      )
-      ..lineTo(size.width * 0.70, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-    canvas.drawPath(land, landPaint);
-
-    for (final rect in [
-      Rect.fromLTWH(size.width * 0.12, size.height * 0.56, 120, 70),
-      Rect.fromLTWH(size.width * 0.50, size.height * 0.48, 80, 58),
-      Rect.fromLTWH(size.width * 0.22, size.height * 0.78, 160, 90),
-    ]) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, const Radius.circular(18)),
-        parkPaint,
-      );
-    }
-
-    for (var y = size.height * 0.20; y < size.height * 0.84; y += 34) {
-      canvas.drawLine(
-        Offset(size.width * 0.08, y),
-        Offset(size.width * 0.78, y - 18),
-        smallRoadPaint,
-      );
-    }
-    for (var x = size.width * 0.14; x < size.width * 0.78; x += 36) {
-      canvas.drawLine(
-        Offset(x, size.height * 0.18),
-        Offset(x + 90, size.height * 0.86),
-        smallRoadPaint,
-      );
-    }
-
-    final freeway = Path()
-      ..moveTo(size.width * 0.12, size.height)
-      ..cubicTo(
-        size.width * 0.28,
-        size.height * 0.78,
-        size.width * 0.48,
-        size.height * 0.75,
-        size.width * 0.50,
-        size.height * 0.55,
-      )
-      ..cubicTo(
-        size.width * 0.52,
-        size.height * 0.34,
-        size.width * 0.74,
-        size.height * 0.36,
-        size.width * 0.76,
-        size.height * 0.12,
-      );
-    canvas.drawPath(freeway, roadPaint);
-
-    final routePaint = Paint()
-      ..color = const Color(0xCCB6FF00)
-      ..strokeWidth = 5
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    final glowPaint = Paint()
-      ..color = const Color(0x5535F46E)
-      ..strokeWidth = 12
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-    final route = Path()
-      ..moveTo(size.width * 0.18, size.height * 0.78)
-      ..cubicTo(
-        size.width * 0.36,
-        size.height * 0.64,
-        size.width * 0.28,
-        size.height * 0.46,
-        size.width * 0.50,
-        size.height * 0.42,
-      )
-      ..cubicTo(
-        size.width * 0.70,
-        size.height * 0.38,
-        size.width * 0.64,
-        size.height * 0.24,
-        size.width * 0.82,
-        size.height * 0.18,
-      );
-    canvas.drawPath(route, glowPaint);
-    canvas.drawPath(route, routePaint);
-
-    final labelPaint = Paint()..color = const Color(0x550B1111);
-    for (final point in [
-      Offset(size.width * 0.56, size.height * 0.62),
-      Offset(size.width * 0.30, size.height * 0.84),
-      Offset(size.width * 0.76, size.height * 0.72),
-    ]) {
-      canvas.drawCircle(point, 18, labelPaint);
-      canvas.drawCircle(point, 9, Paint()..color = const Color(0xFF1E8B68));
-    }
-
-    final haze = Paint()
-      ..shader =
-          RadialGradient(
-            colors: [
-              const Color(0x00FFFFFF),
-              _background.withValues(alpha: 0.18),
-            ],
-          ).createShader(
-            Rect.fromCircle(
-              center: Offset(size.width * 0.5, size.height * 0.42),
-              radius: math.max(size.width, size.height) * 0.65,
-            ),
-          );
-    canvas.drawRect(Offset.zero & size, haze);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-String _formatPace(RouteSummary route) {
-  if (route.distanceKm <= 0 || route.duration == Duration.zero) return "0'00";
-  final totalSeconds = route.duration.inSeconds / route.distanceKm;
+String _formatPace(double distanceKm, Duration duration) {
+  if (distanceKm <= 0 || duration == Duration.zero) return "0'00";
+  final totalSeconds = duration.inSeconds / distanceKm;
   final minutes = totalSeconds ~/ 60;
   final seconds = (totalSeconds % 60).round().toString().padLeft(2, '0');
   return "$minutes'$seconds";
