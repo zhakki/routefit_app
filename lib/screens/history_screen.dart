@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../utils/distance_formatter.dart';
 import '../widgets/route_data.dart';
 import 'result_screen.dart';
 
@@ -59,15 +60,7 @@ class _HistoryHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        IconButton(
-          onPressed: () {
-            if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-          },
-          icon: const Icon(Icons.arrow_back),
-          color: Colors.white,
-          iconSize: 28,
-          tooltip: 'Tagasi',
-        ),
+        const SizedBox(width: 48),
         const Expanded(
           child: Text(
             'RouteFit',
@@ -287,8 +280,8 @@ class _RouteHistoryGlassCard extends StatelessWidget {
                         Expanded(
                           child: _RouteStat(
                             label: 'Vahemaa',
-                            value: route.distanceKm.toStringAsFixed(1),
-                            suffix: 'km',
+                            value: formatDistanceValue(route.distanceKm),
+                            suffix: formatDistanceUnit(route.distanceKm),
                             accent: true,
                           ),
                         ),

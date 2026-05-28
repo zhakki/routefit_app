@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../utils/distance_formatter.dart';
 import '../widgets/route_data.dart';
 
 const _background = Color(0xFF0B0F10);
@@ -356,7 +357,7 @@ class _LastRouteCard extends StatelessWidget {
                       children: [
                         _RouteMetric(
                           label: 'MAA',
-                          value: '${route.distanceKm.toStringAsFixed(2)} km',
+                          value: formatDistance(route.distanceKm),
                         ),
                         const SizedBox(width: 24),
                         _RouteMetric(

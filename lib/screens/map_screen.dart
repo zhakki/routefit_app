@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../providers/tracking_provider.dart';
+import '../utils/distance_formatter.dart';
 import '../utils/permission_helper.dart';
 import '../widgets/route_data.dart';
 import 'result_screen.dart';
@@ -192,7 +193,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                 const _MapHeader(),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -231,7 +232,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content: Text(
-                                        "Background permission required to start tracking.",
+                                        "Taustal asukoha õigus on jälgimise alustamiseks vajalik.",
                                       ),
                                     ),
                                   );
@@ -270,15 +271,7 @@ class _MapHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () {
-              if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-            },
-            icon: const Icon(Icons.arrow_back),
-            color: Colors.white,
-            iconSize: 30,
-            tooltip: 'Tagasi',
-          ),
+          const SizedBox(width: 48),
           const Expanded(
             child: Text(
               'RouteFit',
@@ -326,8 +319,8 @@ class _TopStats extends StatelessWidget {
         Expanded(
           child: _StatGlassCard(
             label: 'Vahemaa',
-            value: distanceKm.toStringAsFixed(2),
-            suffix: 'km',
+            value: formatDistanceValue(distanceKm),
+            suffix: formatDistanceUnit(distanceKm),
           ),
         ),
         const SizedBox(width: 12),
@@ -353,8 +346,8 @@ class _StatGlassCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 112,
-      padding: const EdgeInsets.fromLTRB(12, 18, 12, 16),
+      height: 88,
+      padding: const EdgeInsets.fromLTRB(10, 12, 10, 10),
       decoration: BoxDecoration(
         color: _cardColor,
         borderRadius: BorderRadius.circular(18),
@@ -379,24 +372,27 @@ class _StatGlassCard extends StatelessWidget {
           Text(
             label,
             maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               color: _textMuted,
-              fontSize: 15,
+              fontSize: 13,
               fontWeight: FontWeight.w900,
               letterSpacing: 0,
             ),
           ),
           FittedBox(
             fit: BoxFit.scaleDown,
+            alignment: Alignment.center,
             child: RichText(
+              maxLines: 1,
+              overflow: TextOverflow.visible,
               text: TextSpan(
                 children: [
                   TextSpan(
                     text: value,
                     style: const TextStyle(
                       color: _lime,
-                      fontSize: 46,
+                      fontSize: 34,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 0,
                     ),
@@ -406,7 +402,7 @@ class _StatGlassCard extends StatelessWidget {
                       text: ' $suffix',
                       style: const TextStyle(
                         color: _textMuted,
-                        fontSize: 18,
+                        fontSize: 14,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -434,10 +430,10 @@ class _RouteControlPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(26, 22, 26, 22),
+      padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
       decoration: BoxDecoration(
         color: _panelColor,
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(color: _lineColor),
         boxShadow: const [
           BoxShadow(
@@ -459,7 +455,7 @@ class _RouteControlPanel extends StatelessWidget {
             onPressed: onPause,
             tooltip: tracking ? 'Paus' : 'Alusta',
           ),
-          const SizedBox(width: 24),
+          const SizedBox(width: 14),
           _RoundRouteButton(
             icon: Icons.stop,
             foreground: const Color(0xFF6B1212),
@@ -482,15 +478,15 @@ class _GpsIndicator extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 22,
-          height: 22,
+          width: 16,
+          height: 16,
           decoration: const BoxDecoration(
             color: _lime,
             shape: BoxShape.circle,
             boxShadow: [BoxShadow(color: Color(0x8835F46E), blurRadius: 16)],
           ),
         ),
-        const SizedBox(width: 18),
+        const SizedBox(width: 12),
         const Flexible(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -499,22 +495,20 @@ class _GpsIndicator extends StatelessWidget {
               Text(
                 'GPS jälgimine',
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: _lime,
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0,
                 ),
               ),
-              SizedBox(height: 4),
+              SizedBox(height: 2),
               Text(
                 'Kõrge täpsus',
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: _textMuted,
-                  fontSize: 18,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -553,8 +547,8 @@ class _RoundRouteButton extends StatelessWidget {
           onTap: onPressed,
           borderRadius: BorderRadius.circular(999),
           child: Container(
-            width: 86,
-            height: 86,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
               color: background,
               shape: BoxShape.circle,
@@ -567,7 +561,7 @@ class _RoundRouteButton extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(icon, color: foreground, size: 36),
+            child: Icon(icon, color: foreground, size: 30),
           ),
         ),
       ),

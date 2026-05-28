@@ -67,15 +67,7 @@ class _StatisticsHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        IconButton(
-          onPressed: () {
-            if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-          },
-          icon: const Icon(Icons.arrow_back),
-          color: Colors.white,
-          iconSize: 28,
-          tooltip: 'Tagasi',
-        ),
+        const SizedBox(width: 48),
         const Expanded(
           child: Text(
             'RouteFit',

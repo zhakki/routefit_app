@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../utils/distance_formatter.dart';
 import '../widgets/route_data.dart';
 
 const _background = Color(0xFF101415);
@@ -214,8 +215,8 @@ class _PrimaryStats extends StatelessWidget {
           child: _MetricCard(
             icon: Icons.straighten,
             title: 'Vahemaa',
-            value: route.distanceKm.toStringAsFixed(1),
-            subtitle: 'Kilomeetrit',
+            value: formatDistance(route.distanceKm),
+            subtitle: 'Kogu vahemaa',
             highlighted: true,
           ),
         ),
