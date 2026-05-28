@@ -39,6 +39,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
   LatLng? _currentPos;
   StreamSubscription<LocationData>? _uiLocationSubscription;
   bool _followUser = true;
+  bool _isProgrammaticMove = false;
 
   @override
   void initState() {
@@ -104,6 +105,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
   Future<void> _updateCameraPosition(LatLng position) async {
     final GoogleMapController controller = await _mapController.future;
+    _isProgrammaticMove = true;
     controller.animateCamera(CameraUpdate.newLatLng(position));
   }
 
@@ -163,10 +165,12 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         zoom: DEFAULT_ZOOM,
                       ),
                       onCameraMoveStarted: () {
-                        // If user starts moving the map manually, stop following
-                        if (_followUser) {
+                        // If movement is NOT programmatic, it's a gesture (REASON_GESTURE)
+                        if (!_isProgrammaticMove && _followUser) {
                           setState(() => _followUser = false);
                         }
+                        _isProgrammaticMove =
+                            false; // Reset for the next movement
                       },
                     ),
             ),
