@@ -1,0 +1,595 @@
+import 'package:flutter/material.dart';
+
+import '../utils/distance_formatter.dart';
+import '../widgets/route_data.dart';
+import 'result_screen.dart';
+
+const _background = Color(0xFF101415);
+const _cardColor = Color(0xE6101415);
+const _lineColor = Color(0x283BEA72);
+const _lime = Color(0xFFB6FF00);
+const _green = Color(0xFF35F46E);
+const _cyan = Color(0xFF39F6D2);
+const _textMuted = Color(0xFFD0D6C9);
+
+class HistoryScreen extends StatelessWidget {
+  const HistoryScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(color: _background),
+      child: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
+          children: [
+            const _HistoryHeader(),
+            const SizedBox(height: 34),
+            const _TitleFilterRow(),
+            const SizedBox(height: 18),
+            const _TotalDistanceCard(),
+            const SizedBox(height: 26),
+            for (var index = 0; index < demoRoutes.length; index++) ...[
+              if (index == 1) ...[
+                const _MostFrequentRouteCard(),
+                const SizedBox(height: 18),
+              ],
+              _RouteHistoryGlassCard(
+                route: demoRoutes[index],
+                index: index,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ResultScreen(route: demoRoutes[index]),
+                  ),
+                ),
+              ),
+              if (index != demoRoutes.length - 1) const SizedBox(height: 18),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryHeader extends StatelessWidget {
+  const _HistoryHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const SizedBox(width: 48),
+        const Expanded(
+          child: Text(
+            'RouteFit',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: _lime,
+              fontSize: 28,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0,
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: () {},
+          icon: const Icon(Icons.settings_outlined),
+          color: Colors.white,
+          iconSize: 28,
+          tooltip: 'Seaded',
+        ),
+      ],
+    );
+  }
+}
+
+class _TitleFilterRow extends StatelessWidget {
+  const _TitleFilterRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const Expanded(
+          child: Text(
+            'Ajalugu',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 32,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF252A2B),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: const Color(0x1FFFFFFF)),
+          ),
+          child: const Text(
+            'Viimased 30 päeva',
+            style: TextStyle(
+              color: _textMuted,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TotalDistanceCard extends StatelessWidget {
+  const _TotalDistanceCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.fromLTRB(26, 24, 24, 24),
+      child: Row(
+        children: [
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'KOGU VAHEMAA',
+                  style: TextStyle(
+                    color: _textMuted,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '142.4',
+                      style: TextStyle(
+                        color: _lime,
+                        fontSize: 44,
+                        height: 1,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Padding(
+                      padding: EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        'km',
+                        style: TextStyle(
+                          color: _textMuted,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: _lime, width: 2.4),
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x7735F46E), blurRadius: 22),
+                  ],
+                ),
+              ),
+              const Icon(Icons.trending_up, color: _lime, size: 28),
+              const Positioned(
+                right: -22,
+                top: -18,
+                child: Icon(
+                  Icons.north_east,
+                  color: Color(0x182F3736),
+                  size: 86,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RouteHistoryGlassCard extends StatelessWidget {
+  const _RouteHistoryGlassCard({
+    required this.route,
+    required this.index,
+    required this.onTap,
+  });
+
+  final RouteSummary route;
+  final int index;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: EdgeInsets.zero,
+      radius: 14,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  _RouteIcon(active: index != 1),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _routeTitle(index),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _routeDate(index),
+                          style: const TextStyle(
+                            color: _textMuted,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right, color: _textMuted, size: 28),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Container(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+                decoration: BoxDecoration(
+                  color: const Color(0x990A0F10),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _RouteStat(
+                            label: 'Vahemaa',
+                            value: formatDistanceValue(route.distanceKm),
+                            suffix: formatDistanceUnit(route.distanceKm),
+                            accent: true,
+                          ),
+                        ),
+                        Expanded(
+                          child: _RouteStat(
+                            label: 'Kestus',
+                            value: '${route.duration.inMinutes}',
+                            suffix: 'min',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 26),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _RouteStat(
+                            label: 'Sammud',
+                            value: formatNumber(route.steps),
+                          ),
+                        ),
+                        Expanded(
+                          child: _RouteStat(
+                            label: 'Kalorid',
+                            value: '${route.calories}',
+                            suffix: 'kcal',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RouteIcon extends StatelessWidget {
+  const _RouteIcon({required this.active});
+
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 54,
+      height: 54,
+      decoration: BoxDecoration(
+        color: active ? const Color(0xFF344D12) : const Color(0xFF242B32),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(
+        active ? Icons.directions_run : Icons.directions_walk,
+        color: active ? _lime : _textMuted,
+        size: 28,
+      ),
+    );
+  }
+}
+
+class _RouteStat extends StatelessWidget {
+  const _RouteStat({
+    required this.label,
+    required this.value,
+    this.suffix = '',
+    this.accent = false,
+  });
+
+  final String label;
+  final String value;
+  final String suffix;
+  final bool accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: const TextStyle(
+            color: _textMuted,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0,
+          ),
+        ),
+        const SizedBox(height: 8),
+        RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: value,
+                style: TextStyle(
+                  color: accent ? _lime : Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0,
+                ),
+              ),
+              if (suffix.isNotEmpty)
+                TextSpan(
+                  text: ' $suffix',
+                  style: const TextStyle(
+                    color: _textMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MostFrequentRouteCard extends StatelessWidget {
+  const _MostFrequentRouteCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: EdgeInsets.zero,
+      radius: 14,
+      child: SizedBox(
+        height: 190,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: CustomPaint(painter: _FrequentRoutePainter()),
+              ),
+            ),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  gradient: const LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [Color(0xDD061011), Color(0x33101415)],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 20,
+              bottom: 22,
+              right: 20,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _lime,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'KÕIGE SAGEDASEM MARSRUUT',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 9),
+                  const Text(
+                    'Riverside Trail Loop',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassCard extends StatelessWidget {
+  const _GlassCard({
+    required this.child,
+    this.padding = const EdgeInsets.all(24),
+    this.radius = 24,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: _cardColor,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: _lineColor),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0xAA030607),
+            blurRadius: 28,
+            offset: Offset(0, 16),
+          ),
+          BoxShadow(color: Color(0x223BEA72), blurRadius: 26),
+        ],
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xE61A2021), Color(0xE60F1415)],
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _FrequentRoutePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final background = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF0E2227), Color(0xFF06100F)],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, background);
+
+    final plane = Path()
+      ..moveTo(size.width * 0.28, size.height * 0.92)
+      ..lineTo(size.width * 0.96, size.height * 0.58)
+      ..lineTo(size.width * 0.56, size.height * 0.10)
+      ..lineTo(size.width * 0.05, size.height * 0.44)
+      ..close();
+    canvas.drawPath(plane, Paint()..color = const Color(0x33233437));
+
+    final gridPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = const Color(0x1935F46E);
+    for (var i = 0; i < 8; i++) {
+      final t = i / 7;
+      canvas.drawLine(
+        Offset(size.width * (0.08 + t * 0.48), size.height * (0.44 + t * 0.48)),
+        Offset(size.width * (0.58 + t * 0.38), size.height * (0.10 + t * 0.48)),
+        gridPaint,
+      );
+    }
+
+    final route = Path()
+      ..moveTo(size.width * 0.33, size.height * 0.78)
+      ..lineTo(size.width * 0.48, size.height * 0.62)
+      ..lineTo(size.width * 0.38, size.height * 0.48)
+      ..lineTo(size.width * 0.58, size.height * 0.30)
+      ..lineTo(size.width * 0.76, size.height * 0.42);
+    final glow = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 12
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12)
+      ..color = const Color(0x6635F46E);
+    final line = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round
+      ..shader = const LinearGradient(
+        colors: [_lime, _green, _cyan],
+      ).createShader(Offset.zero & size);
+
+    canvas.drawPath(route, glow);
+    canvas.drawPath(route, line);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+String _routeTitle(int index) {
+  return switch (index) {
+    0 => 'Õhtune treeningjooks',
+    1 => 'Hommikune taastuskõnd',
+    _ => 'Tempotreening',
+  };
+}
+
+String _routeDate(int index) {
+  return switch (index) {
+    0 => '12. okt • 18:45',
+    1 => '11. okt • 8:15',
+    _ => '09. okt • 17:30',
+  };
+}
