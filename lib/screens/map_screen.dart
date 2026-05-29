@@ -233,9 +233,14 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         const Spacer(),
                         RouteControlPanel(
                           tracking: trackingProvider.isTracking,
+                          paused: trackingProvider.isPaused,
                           onPause: () async {
                             if (trackingProvider.isTracking) {
-                              trackingProvider.stopTracking();
+                              if (trackingProvider.isPaused) {
+                                await trackingProvider.resumeTracking();
+                              } else {
+                                await trackingProvider.pauseTracking();
+                              }
                             } else {
                               bool hasBgPerm =
                                   await PermissionHelper.requestBackgroundLocationPermission(

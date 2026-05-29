@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_colors.dart';
 
 class RouteControlPanel extends StatelessWidget {
   const RouteControlPanel({
     super.key,
     required this.tracking,
+    this.paused = false,
     required this.onPause,
     required this.onStop,
   });
 
   final bool tracking;
+  final bool paused;
   final VoidCallback onPause;
   final VoidCallback? onStop;
 
@@ -34,12 +37,12 @@ class RouteControlPanel extends StatelessWidget {
         children: [
           const Expanded(child: GpsIndicator()),
           RoundRouteButton(
-            icon: tracking ? Icons.pause : Icons.play_arrow,
+            icon: (tracking && !paused) ? Icons.pause : Icons.play_arrow,
             foreground: RouteFitColors.trackingLime,
             background: Colors.transparent,
             borderColor: RouteFitColors.trackingLime,
             onPressed: onPause,
-            tooltip: tracking ? 'Paus' : 'Alusta',
+            tooltip: (tracking && !paused) ? 'Paus' : 'Alusta',
           ),
           const SizedBox(width: 14),
           RoundRouteButton(

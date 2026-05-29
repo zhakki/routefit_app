@@ -14,6 +14,7 @@ class TrackingProvider extends ChangeNotifier {
 
   // State variables
   bool _isTracking = false;
+  bool _isPaused = false;
   List<LatLng> _routePoints = [];
   Stopwatch _stopwatch = Stopwatch();
   Timer? _timer;
@@ -23,6 +24,8 @@ class TrackingProvider extends ChangeNotifier {
 
   // Getters
   bool get isTracking => _isTracking;
+
+  bool get isPaused => _isPaused;
 
   List<LatLng> get routePoints => _routePoints;
 
@@ -44,8 +47,10 @@ class TrackingProvider extends ChangeNotifier {
       endTime: TimeOfDay.fromDateTime(now),
       distanceKm: distanceKm,
       duration: _duration,
-      steps: 0, // Placeholder
-      calories: 0, // Placeholder
+      steps: 0,
+      // Placeholder
+      calories: 0,
+      // Placeholder
       averageSpeed: _duration.inSeconds > 0
           ? (distanceKm / (_duration.inSeconds / 3600))
           : 0,
@@ -65,14 +70,6 @@ class TrackingProvider extends ChangeNotifier {
     return 12742000 * asin(sqrt(a)); // 2 * R; R = 6371000 meters
   }
 
-  double calculateRouteDistance() {
-    double distance = 0.0;
-    for (int i = 0; i < _routePoints.length - 1; i++) {
-      distance += _calculateDistance(_routePoints[i], _routePoints[i + 1]);
-    }
-    return distance; // Returns distance in meters
-  }
-
   void _addPoint(LatLng point) {
     if (_routePoints.isNotEmpty) {
       _totalDistance += _calculateDistance(_routePoints.last, point);
@@ -85,6 +82,7 @@ class TrackingProvider extends ChangeNotifier {
 
     _routePoints.clear();
     _totalDistance = 0.0;
+    _isPaused = false;
 
     // Enable background mode and notification for background tracking
     try {
@@ -117,18 +115,23 @@ class TrackingProvider extends ChangeNotifier {
 
     // Start a timer to update duration every second
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      _duration = _stopwatch.elapsed;
-      notifyListeners();
+      if (!_isPaused) {
+        _duration = _stopwatch.elapsed;
+        notifyListeners();
+      }
     });
 
     _startLocationUpdates();
     notifyListeners();
   }
 
-  Future<void> stopTracking() async {
-    if (!_isTracking) return;
+  Future<void> pauseTracking() async {
+    if (!_isTracking || _isPaused) return;
 
-    // Get current location to finalize the path
+    _isPaused = true;
+    _stopwatch.stop();
+
+    // Capture location at the moment of pausing
     try {
       final locationData = await _locationController.getLocation().timeout(
         const Duration(seconds: 2),
@@ -137,10 +140,53 @@ class TrackingProvider extends ChangeNotifier {
         _addPoint(LatLng(locationData.latitude!, locationData.longitude!));
       }
     } catch (e) {
-      debugPrint("Could not get final location (timeout or error): $e");
+      debugPrint("Could not get pause location: $e");
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> resumeTracking() async {
+    if (!_isTracking || !_isPaused) return;
+
+    // Capture location to start tracking again without adding to distance
+    try {
+      final locationData = await _locationController.getLocation();
+      if (locationData.latitude != null && locationData.longitude != null) {
+        // Add point to route points but DON'T use _addPoint to avoid distance increment
+        _routePoints.add(
+          LatLng(locationData.latitude!, locationData.longitude!),
+        );
+      }
+    } catch (e) {
+      debugPrint("Could not get resume location: $e");
+    }
+
+    _isPaused = false;
+    _stopwatch.start();
+
+    notifyListeners();
+  }
+
+  Future<void> stopTracking() async {
+    if (!_isTracking) return;
+
+    // Get current location to finalize the path (only if not already finalized by pause)
+    if (!_isPaused) {
+      try {
+        final locationData = await _locationController.getLocation().timeout(
+          const Duration(seconds: 2),
+        );
+        if (locationData.latitude != null && locationData.longitude != null) {
+          _addPoint(LatLng(locationData.latitude!, locationData.longitude!));
+        }
+      } catch (e) {
+        debugPrint("Could not get final location (timeout or error): $e");
+      }
     }
 
     _isTracking = false;
+    _isPaused = false;
     _stopwatch.stop();
     _timer?.cancel();
     _locationSubscription?.cancel();
@@ -168,7 +214,8 @@ class TrackingProvider extends ChangeNotifier {
     ) {
       if (location.latitude != null && location.longitude != null) {
         final pos = LatLng(location.latitude!, location.longitude!);
-        if (_isTracking) {
+        // Only record updates if tracking is active AND NOT paused
+        if (_isTracking && !_isPaused) {
           _addPoint(pos);
         }
       }
