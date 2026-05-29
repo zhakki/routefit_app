@@ -124,25 +124,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
     // 2. Take a snapshot of the map
     final imageBytes = await controller.takeSnapshot();
 
-    final now = DateTime.now();
-    final start = trackingProvider.startTime ?? now;
-    final distanceKm = trackingProvider.totalDistance / 1000;
-    final duration = trackingProvider.duration;
-
-    final routeSummary = RouteSummary(
-      title: 'Uus marsruut',
-      date: start,
-      startTime: TimeOfDay.fromDateTime(start),
-      endTime: TimeOfDay.fromDateTime(now),
-      distanceKm: distanceKm,
-      duration: duration,
-      steps: 0, // Placeholder
-      calories: 0, // Placeholder
-      averageSpeed: duration.inSeconds > 0
-          ? (distanceKm / (duration.inSeconds / 3600))
-          : 0,
-    );
-
+    // 3. Get summary and stop tracking
+    final routeSummary = trackingProvider.getSummary();
     trackingProvider.stopTracking();
 
     if (mounted) {

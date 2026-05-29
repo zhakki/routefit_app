@@ -2,8 +2,11 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
+
+import '../widgets/route_data.dart';
 
 class TrackingProvider extends ChangeNotifier {
   final Location _locationController = Location();
@@ -28,6 +31,26 @@ class TrackingProvider extends ChangeNotifier {
   double get totalDistance => _totalDistance;
 
   DateTime? get startTime => _startTime;
+
+  RouteSummary getSummary() {
+    final now = DateTime.now();
+    final start = _startTime ?? now;
+    final distanceKm = _totalDistance / 1000;
+
+    return RouteSummary(
+      title: 'Uus marsruut',
+      date: start,
+      startTime: TimeOfDay.fromDateTime(start),
+      endTime: TimeOfDay.fromDateTime(now),
+      distanceKm: distanceKm,
+      duration: _duration,
+      steps: 0, // Placeholder
+      calories: 0, // Placeholder
+      averageSpeed: _duration.inSeconds > 0
+          ? (distanceKm / (_duration.inSeconds / 3600))
+          : 0,
+    );
+  }
 
   double _calculateDistance(LatLng p1, LatLng p2) {
     var p = 0.017453292519943295;
