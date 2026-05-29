@@ -109,7 +109,44 @@ class _TrackingScreenState extends State<TrackingScreen> {
     controller.animateCamera(CameraUpdate.newLatLng(position));
   }
 
-  void _stopRoute(TrackingProvider trackingProvider) {
+  Future<void> _stopRoute(TrackingProvider trackingProvider) async {
+    final GoogleMapController controller = await _mapController.future;
+
+    // 1. Calculate bounds to fit the entire route
+    if (trackingProvider.routePoints.isNotEmpty) {
+      LatLngBounds bounds;
+      if (trackingProvider.routePoints.length == 1) {
+        bounds = LatLngBounds(
+          southwest: trackingProvider.routePoints.first,
+          northeast: trackingProvider.routePoints.first,
+        );
+      } else {
+        double minLat = trackingProvider.routePoints.first.latitude;
+        double minLng = trackingProvider.routePoints.first.longitude;
+        double maxLat = trackingProvider.routePoints.first.latitude;
+        double maxLng = trackingProvider.routePoints.first.longitude;
+
+        for (var point in trackingProvider.routePoints) {
+          if (point.latitude < minLat) minLat = point.latitude;
+          if (point.latitude > maxLat) maxLat = point.latitude;
+          if (point.longitude < minLng) minLng = point.longitude;
+          if (point.longitude > maxLng) maxLng = point.longitude;
+        }
+        bounds = LatLngBounds(
+          southwest: LatLng(minLat, minLng),
+          northeast: LatLng(maxLat, maxLng),
+        );
+      }
+
+      // Move camera and wait for animation
+      _isProgrammaticMove = true;
+      await controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+      await Future.delayed(const Duration(milliseconds: 600));
+    }
+
+    // 2. Take a snapshot of the map
+    final imageBytes = await controller.takeSnapshot();
+
     final now = DateTime.now();
     final start = trackingProvider.startTime ?? now;
     final distanceKm = trackingProvider.totalDistance / 1000;
@@ -131,9 +168,14 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
     trackingProvider.stopTracking();
 
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ResultScreen(route: routeSummary)),
-    );
+    if (mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) =>
+              ResultScreen(route: routeSummary, mapImage: imageBytes),
+        ),
+      );
+    }
   }
 
   @override

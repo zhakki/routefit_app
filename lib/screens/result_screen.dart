@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
@@ -13,9 +14,10 @@ const _green = Color(0xFF35F46E);
 const _textMuted = Color(0xFFD0D6C9);
 
 class ResultScreen extends StatelessWidget {
-  const ResultScreen({required this.route, super.key});
+  const ResultScreen({required this.route, this.mapImage, super.key});
 
   final RouteSummary route;
+  final Uint8List? mapImage;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +33,7 @@ class ResultScreen extends StatelessWidget {
             const _CompleteLabel(),
             const SizedBox(height: 12),
             const Text(
-              'Hommikujooksu kokkuvõte',
+              'Treeningu kokkuvõte',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 32,
@@ -41,7 +43,7 @@ class ResultScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 28),
-            const _RouteMapCard(),
+            _RouteMapCard(mapImage: mapImage),
             const SizedBox(height: 24),
             _PrimaryStats(route: route),
             const SizedBox(height: 18),
@@ -136,7 +138,9 @@ class _CompleteLabel extends StatelessWidget {
 }
 
 class _RouteMapCard extends StatelessWidget {
-  const _RouteMapCard();
+  const _RouteMapCard({this.mapImage});
+
+  final Uint8List? mapImage;
 
   @override
   Widget build(BuildContext context) {
@@ -150,7 +154,9 @@ class _RouteMapCard extends StatelessWidget {
             Positioned.fill(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(18),
-                child: CustomPaint(painter: _RouteMapPainter()),
+                child: mapImage != null
+                    ? Image.memory(mapImage!, fit: BoxFit.cover)
+                    : CustomPaint(painter: _RouteMapPainter()),
               ),
             ),
             Positioned.fill(
@@ -184,7 +190,7 @@ class _RouteMapCard extends StatelessWidget {
                     Icon(Icons.location_on_outlined, color: _lime, size: 18),
                     SizedBox(width: 9),
                     Text(
-                      'Golden Gate Park',
+                      'Marsruudi ülevaade',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 15,
