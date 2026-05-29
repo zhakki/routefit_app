@@ -298,7 +298,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      value: selectedGender,
+                      initialValue: selectedGender,
                       dropdownColor: const Color(0xFF191C1E),
                       decoration: const InputDecoration(
                         labelText: 'Sugu',
@@ -355,7 +355,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       gender: selectedGender,
                     );
 
-                    if (!mounted || !success) return;
+                    if (!mounted || !dialogContext.mounted || !success) {
+                      return;
+                    }
 
                     Navigator.of(dialogContext).pop();
                   },

@@ -10,8 +10,6 @@ const _background = Color(0xFF101415);
 const _cardColor = Color(0xE6101415);
 const _lineColor = Color(0x283BEA72);
 const _lime = Color(0xFFB6FF00);
-const _green = Color(0xFF35F46E);
-const _cyan = Color(0xFF39F6D2);
 const _textMuted = Color(0xFFD0D6C9);
 
 class HistoryScreen extends StatelessWidget {
@@ -508,82 +506,6 @@ class _RouteStat extends StatelessWidget {
   }
 }
 
-class _MostFrequentRouteCard extends StatelessWidget {
-  const _MostFrequentRouteCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return _GlassCard(
-      padding: EdgeInsets.zero,
-      radius: 14,
-      child: SizedBox(
-        height: 190,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: CustomPaint(painter: _FrequentRoutePainter()),
-              ),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  gradient: const LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: [Color(0xDD061011), Color(0x33101415)],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 20,
-              bottom: 22,
-              right: 20,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 7,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _lime,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      'KÕIGE SAGEDASEM MARSRUUT',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 9),
-                  const Text(
-                    'Riverside Trail Loop',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 19,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _GlassCard extends StatelessWidget {
   const _GlassCard({
@@ -621,66 +543,6 @@ class _GlassCard extends StatelessWidget {
       child: child,
     );
   }
-}
-
-class _FrequentRoutePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final background = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFF0E2227), Color(0xFF06100F)],
-      ).createShader(Offset.zero & size);
-    canvas.drawRect(Offset.zero & size, background);
-
-    final plane = Path()
-      ..moveTo(size.width * 0.28, size.height * 0.92)
-      ..lineTo(size.width * 0.96, size.height * 0.58)
-      ..lineTo(size.width * 0.56, size.height * 0.10)
-      ..lineTo(size.width * 0.05, size.height * 0.44)
-      ..close();
-    canvas.drawPath(plane, Paint()..color = const Color(0x33233437));
-
-    final gridPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = const Color(0x1935F46E);
-    for (var i = 0; i < 8; i++) {
-      final t = i / 7;
-      canvas.drawLine(
-        Offset(size.width * (0.08 + t * 0.48), size.height * (0.44 + t * 0.48)),
-        Offset(size.width * (0.58 + t * 0.38), size.height * (0.10 + t * 0.48)),
-        gridPaint,
-      );
-    }
-
-    final route = Path()
-      ..moveTo(size.width * 0.33, size.height * 0.78)
-      ..lineTo(size.width * 0.48, size.height * 0.62)
-      ..lineTo(size.width * 0.38, size.height * 0.48)
-      ..lineTo(size.width * 0.58, size.height * 0.30)
-      ..lineTo(size.width * 0.76, size.height * 0.42);
-    final glow = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 12
-      ..strokeCap = StrokeCap.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12)
-      ..color = const Color(0x6635F46E);
-    final line = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round
-      ..shader = const LinearGradient(
-        colors: [_lime, _green, _cyan],
-      ).createShader(Offset.zero & size);
-
-    canvas.drawPath(route, glow);
-    canvas.drawPath(route, line);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 String _formatRouteDate(DateTime date) {
