@@ -11,11 +11,13 @@ class TrackingProvider extends ChangeNotifier {
 
   // State variables
   bool _isTracking = false;
-  List<LatLng> _routePoints = [];
-  Stopwatch _stopwatch = Stopwatch();
+  final List<LatLng> _routePoints = [];
+  final Stopwatch _stopwatch = Stopwatch();
   Timer? _timer;
   Duration _duration = Duration.zero;
   double _totalDistance = 0.0;
+  DateTime? _startTime;
+  DateTime? get startTime => _startTime;
 
   // Getters
   bool get isTracking => _isTracking;
@@ -59,6 +61,7 @@ class TrackingProvider extends ChangeNotifier {
 
     _routePoints.clear();
     _totalDistance = 0.0;
+    _startTime = DateTime.now();
 
     // Enable background mode and notification for background tracking
     try {

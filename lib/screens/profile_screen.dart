@@ -1,5 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../services/auth_service.dart';
+import '../services/user_service.dart';
 import 'settings_screen.dart';
 
 const _background = Color(0xFF101415);
@@ -18,15 +21,37 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final _name = TextEditingController(text: 'Zina');
-  final _email = TextEditingController(text: 'zina@routefit.app');
-  final _age = TextEditingController(text: '22');
-  final _weight = TextEditingController(text: '58');
-  final _height = TextEditingController(text: '168');
-  final String _gender = 'Naine';
+  final UserService _userService = UserService();
+
+  final _name = TextEditingController();
+  final _email = TextEditingController();
+  final _age = TextEditingController();
+  final _weight = TextEditingController();
+  final _height = TextEditingController();
+
+  String _gender = 'female';
   String _distanceUnit = 'KM';
   bool _locationPermissions = true;
-  bool _notifications = true;
+  bool _saveRoutes = true;
+  int _dailyStepGoal = 10000;
+
+  bool _isLoading = true;
+  bool _isSaving = false;
+
+  String get _genderLabel {
+    return switch (_gender) {
+      'male' => 'Mees',
+      'female' => 'Naine',
+      'other' => 'Muu',
+      _ => _gender.isEmpty ? '-' : _gender,
+    };
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileData();
+  }
 
   @override
   void dispose() {
@@ -38,8 +63,341 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
+  Future<void> _loadProfileData() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      var profile = await _userService.getUserProfile(user.uid);
+
+      if (profile == null) {
+        await _userService.createUserProfile(
+          uid: user.uid,
+          email: user.email ?? '',
+          fullName: user.email?.split('@').first ?? 'RouteFit user',
+        );
+
+        profile = await _userService.getUserProfile(user.uid);
+      }
+
+      final settings = await _userService.getUserSettings(user.uid);
+
+      if (!mounted) return;
+
+      setState(() {
+        _name.text = profile?.fullName ?? '';
+        _email.text = profile?.email ?? user.email ?? '';
+        _age.text = profile?.age == 0 ? '' : profile!.age.toString();
+        _weight.text = profile?.weightKg == 0
+            ? ''
+            : profile!.weightKg.toStringAsFixed(1);
+        _height.text = profile?.heightCm == 0
+            ? ''
+            : profile!.heightCm.toStringAsFixed(1);
+        _gender = profile?.gender.isNotEmpty == true
+            ? profile!.gender
+            : 'female';
+
+        _distanceUnit = (settings?.distanceUnit ?? 'km').toUpperCase();
+        _locationPermissions = settings?.allowLocation ?? true;
+        _saveRoutes = settings?.saveRoutes ?? true;
+        _dailyStepGoal = settings?.dailyStepGoal ?? 10000;
+
+        _isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Profiili laadimine ebaõnnestus: $error')),
+      );
+    }
+  }
+
+  Future<bool> _saveProfile({
+    required String fullName,
+    required String ageText,
+    required String weightText,
+    required String heightText,
+    required String gender,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return false;
+    }
+
+    final age = int.tryParse(ageText.trim()) ?? 0;
+    final weight = double.tryParse(weightText.trim().replaceAll(',', '.')) ?? 0;
+    final height = double.tryParse(heightText.trim().replaceAll(',', '.')) ?? 0;
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      await _userService.updateUserProfile(
+        uid: user.uid,
+        fullName: fullName.trim(),
+        age: age,
+        weightKg: weight,
+        heightCm: height,
+        gender: gender,
+      );
+
+      if (!mounted) return false;
+
+      setState(() {
+        _name.text = fullName.trim();
+        _age.text = age == 0 ? '' : age.toString();
+        _weight.text = weight == 0 ? '' : weight.toStringAsFixed(1);
+        _height.text = height == 0 ? '' : height.toStringAsFixed(1);
+        _gender = gender;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profiil uuendatud')),
+      );
+
+      return true;
+    } catch (error) {
+      if (!mounted) return false;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Profiili salvestamine ebaõnnestus: $error')),
+      );
+
+      return false;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _updateSettings({
+    String? distanceUnit,
+    bool? saveRoutes,
+    bool? allowLocation,
+    int? dailyStepGoal,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return;
+    }
+
+    setState(() {
+      if (distanceUnit != null) {
+        _distanceUnit = distanceUnit;
+      }
+
+      if (saveRoutes != null) {
+        _saveRoutes = saveRoutes;
+      }
+
+      if (allowLocation != null) {
+        _locationPermissions = allowLocation;
+      }
+
+      if (dailyStepGoal != null) {
+        _dailyStepGoal = dailyStepGoal;
+      }
+    });
+
+    try {
+      await _userService.updateUserSettings(
+        uid: user.uid,
+        distanceUnit: distanceUnit?.toLowerCase(),
+        saveRoutes: saveRoutes,
+        allowLocation: allowLocation,
+        dailyStepGoal: dailyStepGoal,
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Seadete salvestamine ebaõnnestus: $error')),
+      );
+    }
+  }
+
+  Future<void> _logout() async {
+    await AuthService().logout();
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Oled välja logitud')),
+    );
+  }
+
+  void _showEditProfileDialog() {
+    final nameController = TextEditingController(text: _name.text);
+    final ageController = TextEditingController(text: _age.text);
+    final weightController = TextEditingController(text: _weight.text);
+    final heightController = TextEditingController(text: _height.text);
+    String selectedGender = _gender;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF101415),
+              title: const Text(
+                'Muuda profiili',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _EditTextField(
+                      controller: nameController,
+                      label: 'Nimi',
+                    ),
+                    const SizedBox(height: 12),
+                    _EditTextField(
+                      controller: ageController,
+                      label: 'Vanus',
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 12),
+                    _EditTextField(
+                      controller: weightController,
+                      label: 'Kaal kg',
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _EditTextField(
+                      controller: heightController,
+                      label: 'Pikkus cm',
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: selectedGender,
+                      dropdownColor: const Color(0xFF191C1E),
+                      decoration: const InputDecoration(
+                        labelText: 'Sugu',
+                        labelStyle: TextStyle(color: _textMuted),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: _lineColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: _lime),
+                        ),
+                      ),
+                      style: const TextStyle(color: Colors.white),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'female',
+                          child: Text('Naine'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'male',
+                          child: Text('Mees'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'other',
+                          child: Text('Muu'),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) return;
+
+                        setDialogState(() {
+                          selectedGender = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: _isSaving
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Tühista'),
+                ),
+                FilledButton(
+                  onPressed: _isSaving
+                      ? null
+                      : () async {
+                    final success = await _saveProfile(
+                      fullName: nameController.text,
+                      ageText: ageController.text,
+                      weightText: weightController.text,
+                      heightText: heightController.text,
+                      gender: selectedGender,
+                    );
+
+                    if (!mounted || !success) return;
+
+                    Navigator.of(dialogContext).pop();
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _lime,
+                    foregroundColor: Colors.black,
+                  ),
+                  child: Text(_isSaving ? 'Salvestan...' : 'Salvesta'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (_isLoading) {
+      return const DecoratedBox(
+        decoration: BoxDecoration(color: _background),
+        child: Center(
+          child: CircularProgressIndicator(color: _lime),
+        ),
+      );
+    }
+
+    if (user == null) {
+      return const DecoratedBox(
+        decoration: BoxDecoration(color: _background),
+        child: Center(
+          child: Text(
+            'Kasutaja pole sisse logitud',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+
     return DecoratedBox(
       decoration: const BoxDecoration(color: _background),
       child: SafeArea(
@@ -49,34 +407,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             const _ProfileHeader(),
             const SizedBox(height: 38),
-            _AvatarBlock(name: _name.text, onEdit: _showProfileUpdated),
+            _AvatarBlock(
+              name: _name.text.isEmpty ? 'RouteFit kasutaja' : _name.text,
+              onEdit: _showEditProfileDialog,
+            ),
+            const SizedBox(height: 12),
+            Center(
+              child: Text(
+                _email.text,
+                style: const TextStyle(
+                  color: _textMuted,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
             const SizedBox(height: 34),
             _ProfileMetricGrid(
-              age: _age.text,
-              weight: _weight.text,
-              height: _height.text,
-              gender: _gender,
+              age: _age.text.isEmpty ? '-' : _age.text,
+              weight: _weight.text.isEmpty ? '-' : _weight.text,
+              height: _height.text.isEmpty ? '-' : _height.text,
+              gender: _genderLabel,
             ),
             const SizedBox(height: 34),
             const _SectionLabel('Eesmärgid ja eelistused'),
             const SizedBox(height: 18),
             _PreferencesCard(
+              dailyStepGoal: _dailyStepGoal,
               distanceUnit: _distanceUnit,
               locationPermissions: _locationPermissions,
-              notifications: _notifications,
+              saveRoutes: _saveRoutes,
+              onDailyStepGoalChanged: (value) {
+                _updateSettings(dailyStepGoal: value);
+              },
               onDistanceUnitChanged: (value) {
-                setState(() => _distanceUnit = value);
+                _updateSettings(distanceUnit: value);
               },
               onLocationPermissionsChanged: (value) {
-                setState(() => _locationPermissions = value);
+                _updateSettings(allowLocation: value);
               },
-              onNotificationsChanged: (value) {
-                setState(() => _notifications = value);
+              onSaveRoutesChanged: (value) {
+                _updateSettings(saveRoutes: value);
               },
             ),
             const SizedBox(height: 34),
             TextButton(
-              onPressed: () {},
+              onPressed: _logout,
               style: TextButton.styleFrom(
                 foregroundColor: const Color(0xFFFFC1B8),
                 textStyle: const TextStyle(
@@ -91,11 +467,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+}
 
-  void _showProfileUpdated() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Profiil uuendatud')));
+class _EditTextField extends StatelessWidget {
+  const _EditTextField({
+    required this.controller,
+    required this.label,
+    this.keyboardType,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final TextInputType? keyboardType;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      cursorColor: _lime,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: _textMuted),
+        enabledBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: _lineColor),
+        ),
+        focusedBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: _lime),
+        ),
+      ),
+    );
   }
 }
 
@@ -186,7 +588,7 @@ class _AvatarBlock extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         const Text(
-          'ELIITJOOKSJA • TASE 42',
+          'ROUTEFIT KASUTAJA',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: _textMuted,
@@ -372,23 +774,29 @@ class _SectionLabel extends StatelessWidget {
 
 class _PreferencesCard extends StatelessWidget {
   const _PreferencesCard({
+    required this.dailyStepGoal,
     required this.distanceUnit,
     required this.locationPermissions,
-    required this.notifications,
+    required this.saveRoutes,
+    required this.onDailyStepGoalChanged,
     required this.onDistanceUnitChanged,
     required this.onLocationPermissionsChanged,
-    required this.onNotificationsChanged,
+    required this.onSaveRoutesChanged,
   });
 
+  final int dailyStepGoal;
   final String distanceUnit;
   final bool locationPermissions;
-  final bool notifications;
+  final bool saveRoutes;
+  final ValueChanged<int> onDailyStepGoalChanged;
   final ValueChanged<String> onDistanceUnitChanged;
   final ValueChanged<bool> onLocationPermissionsChanged;
-  final ValueChanged<bool> onNotificationsChanged;
+  final ValueChanged<bool> onSaveRoutesChanged;
 
   @override
   Widget build(BuildContext context) {
+    final sliderValue = dailyStepGoal.toDouble().clamp(1000.0, 30000.0).toDouble();
+
     return _GlassCard(
       padding: EdgeInsets.zero,
       radius: 12,
@@ -399,9 +807,9 @@ class _PreferencesCard extends StatelessWidget {
             trailing: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                const Text(
-                  '10 000',
-                  style: TextStyle(
+                Text(
+                  _formatStepGoal(dailyStepGoal),
+                  style: const TextStyle(
                     color: _lime,
                     fontSize: 17,
                     fontWeight: FontWeight.w900,
@@ -409,7 +817,7 @@ class _PreferencesCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
                 SizedBox(
-                  width: 120,
+                  width: 140,
                   child: SliderTheme(
                     data: SliderTheme.of(context).copyWith(
                       activeTrackColor: _lime,
@@ -418,7 +826,15 @@ class _PreferencesCard extends StatelessWidget {
                       overlayColor: const Color(0x2235F46E),
                       trackHeight: 4,
                     ),
-                    child: const Slider(value: 0.58, onChanged: null),
+                    child: Slider(
+                      min: 1000,
+                      max: 30000,
+                      divisions: 29,
+                      value: sliderValue,
+                      onChanged: (value) {
+                        onDailyStepGoalChanged(value.round());
+                      },
+                    ),
                   ),
                 ),
               ],
@@ -442,10 +858,10 @@ class _PreferencesCard extends StatelessWidget {
           ),
           const _DividerLine(),
           _PreferenceRow(
-            label: 'Teavitused',
+            label: 'Salvesta marsruudid',
             trailing: _NeonSwitch(
-              value: notifications,
-              onChanged: onNotificationsChanged,
+              value: saveRoutes,
+              onChanged: onSaveRoutesChanged,
             ),
           ),
         ],
@@ -624,4 +1040,11 @@ class _GlassCard extends StatelessWidget {
       child: child,
     );
   }
+}
+
+String _formatStepGoal(int value) {
+  return value.toString().replaceAllMapped(
+    RegExp(r'\B(?=(\d{3})+(?!\d))'),
+        (_) => ' ',
+  );
 }

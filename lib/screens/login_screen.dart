@@ -1,5 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../services/auth_service.dart';
 import '../widgets/app_widgets.dart';
 import 'app_shell.dart';
 import 'register_screen.dart';
@@ -22,8 +24,9 @@ class _LoginScreenState extends State<LoginScreen> {
   static const _inputBorder = Color(0x1AFFFFFF);
 
   final _formKey = GlobalKey<FormState>();
-  final _email = TextEditingController(text: 'zina@routefit.app');
-  final _password = TextEditingController(text: 'routefit');
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -32,11 +35,57 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _submit() {
-    if (_formKey.currentState!.validate()) {
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const AppShell()));
+  Future<void> _submit() async {
+    if (_isLoading) return;
+
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final authService = AuthService();
+
+      await authService.login(
+        email: _email.text.trim(),
+        password: _password.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const AppShell()),
+      );
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) return;
+
+      final message = switch (error.code) {
+        'invalid-email' => 'E-posti aadress ei ole korrektne',
+        'user-disabled' => 'See kasutaja on blokeeritud',
+        'user-not-found' => 'Sellist kasutajat ei leitud',
+        'wrong-password' => 'Vale parool',
+        'invalid-credential' => 'Vale e-post või parool',
+        _ => 'Sisselogimine ebaõnnestus: ${error.message}',
+      };
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Viga: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -117,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               SizedBox(
                                 height: 72,
                                 child: FilledButton(
-                                  onPressed: _submit,
+                                  onPressed: _isLoading ? null : _submit,
                                   style: FilledButton.styleFrom(
                                     backgroundColor: _lime,
                                     foregroundColor: const Color(0xFF161E00),
@@ -128,7 +177,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                       fontFamily: 'Montserrat',
                                     ),
                                   ),
-                                  child: const Row(
+                                  child: _isLoading
+                                      ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      color: Color(0xFF161E00),
+                                    ),
+                                  )
+                                      : const Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text('Logi sisse'),
@@ -138,7 +196,60 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                               ),
+                              const SizedBox(height: 20),
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 6,
+                                children: [
+                                  const Text(
+                                    'Uus RouteFitis?',
+                                    style: TextStyle(
+                                      color: _muted,
+                                      fontSize: 17,
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => const RegisterScreen(),
+                                      ),
+                                    ),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: _lime,
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      textStyle: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w800,
+                                        fontFamily: 'Montserrat',
+                                      ),
+                                    ),
+                                    child: const Text('Loo konto'),
+                                  ),
+                                ],
+                              ),
                               const SizedBox(height: 28),
+                              const _DividerLabel(),
+                              const SizedBox(height: 22),
+                              const Row(
+                                children: [
+                                  Expanded(
+                                    child: _SocialButton(
+                                      icon: Icons.g_mobiledata,
+                                      label: 'Google',
+                                    ),
+                                  ),
+                                  SizedBox(width: 16),
+                                  Expanded(
+                                    child: _SocialButton(
+                                      icon: Icons.apple,
+                                      label: 'Apple',
+                                    ),
+                                  ),
+                                ],
+                              ),
                               const _DividerLabel(),
                               const SizedBox(height: 22),
                               const Row(

@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../utils/distance_formatter.dart';
@@ -9,11 +7,13 @@ const _background = Color(0xFF101415);
 const _cardColor = Color(0xE6101415);
 const _lineColor = Color(0x283BEA72);
 const _lime = Color(0xFFB6FF00);
-const _green = Color(0xFF35F46E);
 const _textMuted = Color(0xFFD0D6C9);
 
 class ResultScreen extends StatelessWidget {
-  const ResultScreen({required this.route, super.key});
+  const ResultScreen({
+    required this.route,
+    super.key,
+  });
 
   final RouteSummary route;
 
@@ -29,35 +29,36 @@ class ResultScreen extends StatelessWidget {
             const _ResultHeader(),
             const SizedBox(height: 34),
             const _CompleteLabel(),
-            const SizedBox(height: 12),
-            const Text(
-              'Hommikujooksu kokkuvõte',
-              style: TextStyle(
+            const SizedBox(height: 16),
+            Text(
+              route.title.isEmpty ? 'Marsruudi kokkuvõte' : route.title,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 32,
                 height: 1.12,
                 fontWeight: FontWeight.w900,
-                letterSpacing: 0,
               ),
             ),
-            const SizedBox(height: 28),
-            const _RouteMapCard(),
-            const SizedBox(height: 24),
-            _PrimaryStats(route: route),
+            const SizedBox(height: 10),
+            Text(
+              _formatDate(route.date),
+              style: const TextStyle(
+                color: _textMuted,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 30),
+            _MainSummaryCard(route: route),
             const SizedBox(height: 18),
-            _SecondaryStats(route: route),
+            _SmallStatsGrid(route: route),
             const SizedBox(height: 18),
-            _AverageSpeedCard(route: route),
+            _SavedInfoCard(),
             const SizedBox(height: 34),
-            _SaveRouteButton(
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Marsruut salvestati ajalukku')),
-              ),
-            ),
-            const SizedBox(height: 16),
             _BackHomeButton(
-              onPressed: () =>
-                  Navigator.of(context).popUntil((route) => route.isFirst),
+              onPressed: () {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              },
             ),
           ],
         ),
@@ -89,17 +90,10 @@ class _ResultHeader extends StatelessWidget {
               fontSize: 28,
               fontStyle: FontStyle.italic,
               fontWeight: FontWeight.w900,
-              letterSpacing: 0,
             ),
           ),
         ),
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.settings_outlined),
-          color: Colors.white,
-          iconSize: 28,
-          tooltip: 'Seaded',
-        ),
+        const SizedBox(width: 48),
       ],
     );
   }
@@ -116,18 +110,22 @@ class _CompleteLabel extends StatelessWidget {
           decoration: BoxDecoration(
             color: _lime,
             shape: BoxShape.circle,
-            boxShadow: [BoxShadow(color: Color(0x8835F46E), blurRadius: 16)],
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x8835F46E),
+                blurRadius: 16,
+              ),
+            ],
           ),
           child: SizedBox(width: 11, height: 11),
         ),
         SizedBox(width: 10),
         Text(
-          'TREENING LÕPETATUD',
+          'MARSRUUT LÕPETATUD',
           style: TextStyle(
             color: _lime,
             fontSize: 14,
             fontWeight: FontWeight.w900,
-            letterSpacing: 0,
           ),
         ),
       ],
@@ -135,169 +133,92 @@ class _CompleteLabel extends StatelessWidget {
   }
 }
 
-class _RouteMapCard extends StatelessWidget {
-  const _RouteMapCard();
+class _MainSummaryCard extends StatelessWidget {
+  const _MainSummaryCard({
+    required this.route,
+  });
+
+  final RouteSummary route;
 
   @override
   Widget build(BuildContext context) {
     return _GlassCard(
-      padding: EdgeInsets.zero,
-      radius: 18,
-      child: SizedBox(
-        height: 230,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(18),
-                child: CustomPaint(painter: _RouteMapPainter()),
-              ),
+      glow: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'KOKKUVÕTE',
+            style: TextStyle(
+              color: _textMuted,
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
             ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  gradient: const LinearGradient(
-                    colors: [Color(0x99080D0E), Color(0x22080D0E)],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 24,
-              bottom: 22,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xDD060A0B),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: const Color(0x223BEA72)),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.location_on_outlined, color: _lime, size: 18),
-                    SizedBox(width: 9),
-                    Text(
-                      'Golden Gate Park',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _BigMetric(
+                  label: 'Vahemaa',
+                  value: formatDistance(route.distanceKm),
+                  icon: Icons.straighten,
                 ),
               ),
-            ),
-          ],
-        ),
+              const SizedBox(width: 18),
+              Expanded(
+                child: _BigMetric(
+                  label: 'Aeg',
+                  value: formatDuration(route.duration),
+                  icon: Icons.timer_outlined,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
-class _PrimaryStats extends StatelessWidget {
-  const _PrimaryStats({required this.route});
-
-  final RouteSummary route;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _MetricCard(
-            icon: Icons.straighten,
-            title: 'Vahemaa',
-            value: formatDistance(route.distanceKm),
-            subtitle: 'Kogu vahemaa',
-            highlighted: true,
-          ),
-        ),
-        const SizedBox(width: 18),
-        Expanded(
-          child: _MetricCard(
-            icon: Icons.timer_outlined,
-            title: 'Kestus',
-            value: formatDuration(route.duration),
-            subtitle: 'Koguaeg',
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SecondaryStats extends StatelessWidget {
-  const _SecondaryStats({required this.route});
-
-  final RouteSummary route;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _CompactMetricCard(
-            icon: Icons.directions_walk,
-            title: 'Sammud',
-            value: formatNumber(route.steps),
-          ),
-        ),
-        const SizedBox(width: 18),
-        Expanded(
-          child: _CompactMetricCard(
-            icon: Icons.local_fire_department_outlined,
-            title: 'Kalorid',
-            value: '${route.calories}',
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _MetricCard extends StatelessWidget {
-  const _MetricCard({
-    required this.icon,
-    required this.title,
+class _BigMetric extends StatelessWidget {
+  const _BigMetric({
+    required this.label,
     required this.value,
-    required this.subtitle,
-    this.highlighted = false,
+    required this.icon,
   });
 
-  final IconData icon;
-  final String title;
+  final String label;
   final String value;
-  final String subtitle;
-  final bool highlighted;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    return _GlassCard(
-      radius: 14,
-      padding: const EdgeInsets.fromLTRB(26, 28, 22, 26),
-      glow: highlighted,
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+      decoration: BoxDecoration(
+        color: const Color(0x990A0F10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0x143BEA72)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: _lime, size: 28),
-          const SizedBox(height: 18),
+          Icon(
+            icon,
+            color: _lime,
+            size: 28,
+          ),
+          const SizedBox(height: 16),
           Text(
-            title,
+            label,
             style: const TextStyle(
               color: _textMuted,
               fontSize: 15,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
@@ -305,19 +226,9 @@ class _MetricCard extends StatelessWidget {
               value,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 42,
+                fontSize: 34,
                 fontWeight: FontWeight.w900,
-                letterSpacing: 0,
               ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              color: _textMuted,
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -326,62 +237,107 @@ class _MetricCard extends StatelessWidget {
   }
 }
 
-class _CompactMetricCard extends StatelessWidget {
-  const _CompactMetricCard({
+class _SmallStatsGrid extends StatelessWidget {
+  const _SmallStatsGrid({
+    required this.route,
+  });
+
+  final RouteSummary route;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _SmallMetricCard(
+                icon: Icons.directions_walk,
+                label: 'Sammud',
+                value: formatNumber(route.steps),
+              ),
+            ),
+            const SizedBox(width: 18),
+            Expanded(
+              child: _SmallMetricCard(
+                icon: Icons.local_fire_department_outlined,
+                label: 'Kalorid',
+                value: '${route.calories} kcal',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        Row(
+          children: [
+            Expanded(
+              child: _SmallMetricCard(
+                icon: Icons.speed,
+                label: 'Keskmine kiirus',
+                value: '${route.averageSpeed.toStringAsFixed(1)} km/h',
+              ),
+            ),
+            const SizedBox(width: 18),
+            Expanded(
+              child: _SmallMetricCard(
+                icon: Icons.schedule,
+                label: 'Aeg',
+                value: '${_formatTime(route.startTime)} - ${_formatTime(route.endTime)}',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _SmallMetricCard extends StatelessWidget {
+  const _SmallMetricCard({
     required this.icon,
-    required this.title,
+    required this.label,
     required this.value,
   });
 
   final IconData icon;
-  final String title;
+  final String label;
   final String value;
 
   @override
   Widget build(BuildContext context) {
     return _GlassCard(
       radius: 14,
-      padding: const EdgeInsets.all(24),
-      child: Row(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: const Color(0xFF283A18),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: _lime, size: 30),
+          Icon(
+            icon,
+            color: _lime,
+            size: 30,
           ),
-          const SizedBox(width: 18),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _textMuted,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    value,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ],
+          const SizedBox(height: 16),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: _textMuted,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 10),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
         ],
@@ -390,152 +346,65 @@ class _CompactMetricCard extends StatelessWidget {
   }
 }
 
-class _AverageSpeedCard extends StatelessWidget {
-  const _AverageSpeedCard({required this.route});
-
-  final RouteSummary route;
+class _SavedInfoCard extends StatelessWidget {
+  const _SavedInfoCard();
 
   @override
   Widget build(BuildContext context) {
     return _GlassCard(
       radius: 14,
-      padding: const EdgeInsets.fromLTRB(26, 26, 20, 0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+      child: const Row(
         children: [
+          Icon(
+            Icons.check_circle_outline,
+            color: _lime,
+            size: 30,
+          ),
+          SizedBox(width: 16),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 28),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Keskmine kiirus',
-                    style: TextStyle(
-                      color: _textMuted,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: RichText(
-                      text: TextSpan(
-                        children: [
-                          TextSpan(
-                            text: route.averageSpeed.toStringAsFixed(1),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 44,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0,
-                            ),
-                          ),
-                          const TextSpan(
-                            text: ' km/h',
-                            style: TextStyle(
-                              color: _textMuted,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+            child: Text(
+              'Marsruut on salvestatud ajalukku.',
+              style: TextStyle(
+                color: _textMuted,
+                fontSize: 16,
+                height: 1.3,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
-          const SizedBox(width: 18),
-          const SizedBox(width: 190, height: 104, child: _SpeedBars()),
         ],
-      ),
-    );
-  }
-}
-
-class _SpeedBars extends StatelessWidget {
-  const _SpeedBars();
-
-  @override
-  Widget build(BuildContext context) {
-    const values = [0.48, 0.64, 0.48, 0.72, 0.80, 0.96];
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: List.generate(values.length, (index) {
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 3),
-            child: Container(
-              height: 92 * values[index],
-              decoration: BoxDecoration(
-                color: const Color(0xFF526915),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(4),
-                ),
-                boxShadow: index == values.length - 1
-                    ? const [
-                        BoxShadow(color: Color(0x6635F46E), blurRadius: 16),
-                      ]
-                    : null,
-              ),
-            ),
-          ),
-        );
-      }),
-    );
-  }
-}
-
-class _SaveRouteButton extends StatelessWidget {
-  const _SaveRouteButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return FilledButton.icon(
-      onPressed: onPressed,
-      style: FilledButton.styleFrom(
-        minimumSize: const Size.fromHeight(76),
-        backgroundColor: _lime,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-      ),
-      icon: const Icon(Icons.save_outlined, size: 26),
-      label: const Text(
-        'Salvesta marsruut',
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
       ),
     );
   }
 }
 
 class _BackHomeButton extends StatelessWidget {
-  const _BackHomeButton({required this.onPressed});
+  const _BackHomeButton({
+    required this.onPressed,
+  });
 
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton(
+    return FilledButton(
       onPressed: onPressed,
-      style: OutlinedButton.styleFrom(
+      style: FilledButton.styleFrom(
         minimumSize: const Size.fromHeight(72),
-        foregroundColor: Colors.white,
-        side: const BorderSide(color: Color(0x2EFFFFFF)),
-        backgroundColor: const Color(0xFF222728),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+        backgroundColor: _lime,
+        foregroundColor: Colors.black,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(999),
+        ),
       ),
       child: const Text(
         'Tagasi avalehele',
-        style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+        style: TextStyle(
+          fontSize: 19,
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
   }
@@ -571,13 +440,15 @@ class _GlassCard extends StatelessWidget {
           BoxShadow(
             color: glow ? const Color(0x5535F46E) : const Color(0x223BEA72),
             blurRadius: glow ? 34 : 24,
-            offset: const Offset(0, 0),
           ),
         ],
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xE61A2021), Color(0xE60F1415)],
+          colors: [
+            Color(0xE61A2021),
+            Color(0xE60F1415),
+          ],
         ),
       ),
       child: child,
@@ -585,90 +456,17 @@ class _GlassCard extends StatelessWidget {
   }
 }
 
-class _RouteMapPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final background = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFF122126), Color(0xFF071011)],
-      ).createShader(Offset.zero & size);
-    canvas.drawRect(Offset.zero & size, background);
+String _formatDate(DateTime date) {
+  final day = date.day.toString().padLeft(2, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  final year = date.year.toString();
 
-    final gridPaint = Paint()
-      ..color = const Color(0x183BEA72)
-      ..strokeWidth = 1;
-    for (var x = -size.width; x < size.width * 1.5; x += 28) {
-      canvas.drawLine(
-        Offset(x, 0),
-        Offset(x + size.height * 0.9, size.height),
-        gridPaint,
-      );
-    }
-    for (var y = 18.0; y < size.height; y += 30) {
-      final path = Path()..moveTo(0, y);
-      for (var x = 0.0; x <= size.width; x += 44) {
-        path.lineTo(x, y + math.sin((x + y) / 34) * 7);
-      }
-      canvas.drawPath(path, gridPaint);
-    }
+  return '$day.$month.$year';
+}
 
-    final roadPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round
-      ..color = const Color(0x445C6B6B);
-    canvas.drawLine(
-      Offset(size.width * 0.18, size.height),
-      Offset(size.width * 0.78, 0),
-      roadPaint,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.0, size.height * 0.66),
-      Offset(size.width, size.height * 0.15),
-      roadPaint,
-    );
+String _formatTime(TimeOfDay time) {
+  final hour = time.hour.toString().padLeft(2, '0');
+  final minute = time.minute.toString().padLeft(2, '0');
 
-    final routePath = Path()
-      ..moveTo(size.width * 0.42, size.height)
-      ..cubicTo(
-        size.width * 0.50,
-        size.height * 0.80,
-        size.width * 0.74,
-        size.height * 0.66,
-        size.width * 0.59,
-        size.height * 0.48,
-      )
-      ..cubicTo(
-        size.width * 0.42,
-        size.height * 0.28,
-        size.width * 0.58,
-        size.height * 0.16,
-        size.width * 0.52,
-        0,
-      );
-
-    final glowPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 16
-      ..strokeCap = StrokeCap.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14)
-      ..color = const Color(0x6635F46E);
-    final routePaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 6
-      ..strokeCap = StrokeCap.round
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [_green, _lime, _green],
-      ).createShader(Offset.zero & size);
-
-    canvas.drawPath(routePath, glowPaint);
-    canvas.drawPath(routePath, routePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  return '$hour:$minute';
 }

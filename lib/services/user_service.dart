@@ -100,7 +100,7 @@ class UserService {
     if (heightCm != null) data['heightCm'] = heightCm;
     if (gender != null) data['gender'] = gender;
 
-    await _userDoc(uid).update(data);
+    await _userDoc(uid).set(data, SetOptions(merge: true));
   }
 
   Future<void> updateDailyStepGoal({
@@ -111,5 +111,37 @@ class UserService {
       'dailyStepGoal': dailyStepGoal,
       'updatedAt': Timestamp.fromDate(DateTime.now()),
     });
+  }
+  Future<void> updateUserSettings({
+    required String uid,
+    String? distanceUnit,
+    bool? saveRoutes,
+    bool? allowLocation,
+    int? dailyStepGoal,
+  }) async {
+    final Map<String, dynamic> data = {
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    };
+
+    if (distanceUnit != null) {
+      data['distanceUnit'] = distanceUnit;
+    }
+
+    if (saveRoutes != null) {
+      data['saveRoutes'] = saveRoutes;
+    }
+
+    if (allowLocation != null) {
+      data['allowLocation'] = allowLocation;
+    }
+
+    if (dailyStepGoal != null) {
+      data['dailyStepGoal'] = dailyStepGoal;
+    }
+
+    await _userDoc(uid)
+        .collection('settings')
+        .doc('main')
+        .set(data, SetOptions(merge: true));
   }
 }

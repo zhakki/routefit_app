@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_maps_flutter_android/google_maps_flutter_android.dart';
@@ -8,7 +9,13 @@ import 'package:location/location.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../models/route_model.dart';
+import '../models/route_point.dart';
 import '../providers/tracking_provider.dart';
+import '../services/route_service.dart';
+import '../services/statistics_service.dart';
+import '../services/step_service.dart';
+import '../services/user_service.dart';
 import '../utils/distance_formatter.dart';
 import '../utils/permission_helper.dart';
 import '../widgets/route_data.dart';
@@ -22,7 +29,7 @@ const _lime = Color(0xFFB6FF00);
 const _textMuted = Color(0xFFD0D6C9);
 const _stopColor = Color(0xFFFFA8A1);
 
-const double DEFAULT_ZOOM = 18;
+const double defaultZoom = 18;
 
 class TrackingScreen extends StatefulWidget {
   const TrackingScreen({super.key});
@@ -34,12 +41,15 @@ class TrackingScreen extends StatefulWidget {
 class _TrackingScreenState extends State<TrackingScreen> {
   final Location _locationController = Location();
   final Completer<GoogleMapController> _mapController =
-      Completer<GoogleMapController>();
+  Completer<GoogleMapController>();
+  final StepService _stepService = StepService();
 
   LatLng? _currentPos;
   StreamSubscription<LocationData>? _uiLocationSubscription;
+
   bool _followUser = true;
   bool _isProgrammaticMove = false;
+  bool _isSavingRoute = false;
 
   @override
   void initState() {
@@ -52,6 +62,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
   void _initializeMapRenderer() {
     final GoogleMapsFlutterPlatform mapsImplementation =
         GoogleMapsFlutterPlatform.instance;
+
     if (mapsImplementation is GoogleMapsFlutterAndroid) {
       mapsImplementation.useAndroidViewSurface = true;
     }
@@ -60,38 +71,61 @@ class _TrackingScreenState extends State<TrackingScreen> {
   @override
   void dispose() {
     _uiLocationSubscription?.cancel();
+    _stepService.dispose();
     WakelockPlus.disable();
     super.dispose();
   }
 
   Future<void> _checkLocationPermissions() async {
     bool serviceEnabled = await _locationController.serviceEnabled();
+
     if (!serviceEnabled) {
       serviceEnabled = await _locationController.requestService();
-      if (!serviceEnabled) return;
+
+      if (!serviceEnabled) {
+        return;
+      }
     }
 
-    PermissionStatus permissionGranted = await _locationController
-        .hasPermission();
+    PermissionStatus permissionGranted =
+    await _locationController.hasPermission();
+
     if (permissionGranted == PermissionStatus.denied) {
       permissionGranted = await _locationController.requestPermission();
-      if (permissionGranted != PermissionStatus.granted) return;
+
+      if (permissionGranted != PermissionStatus.granted) {
+        return;
+      }
     }
 
-    // Get initial position
     final locationData = await _locationController.getLocation();
-    if (mounted) {
+
+    if (mounted &&
+        locationData.latitude != null &&
+        locationData.longitude != null) {
       setState(() {
-        _currentPos = LatLng(locationData.latitude!, locationData.longitude!);
+        _currentPos = LatLng(
+          locationData.latitude!,
+          locationData.longitude!,
+        );
       });
     }
 
-    // Listen for current position updates for UI display
-    _uiLocationSubscription = _locationController.onLocationChanged.listen((
-      location,
-    ) {
-      if (location.latitude != null && location.longitude != null && mounted) {
-        final newPos = LatLng(location.latitude!, location.longitude!);
+    _uiLocationSubscription = _locationController.onLocationChanged.listen(
+          (location) {
+        if (location.latitude == null || location.longitude == null) {
+          return;
+        }
+
+        if (!mounted) {
+          return;
+        }
+
+        final newPos = LatLng(
+          location.latitude!,
+          location.longitude!,
+        );
+
         setState(() {
           _currentPos = newPos;
         });
@@ -99,36 +133,173 @@ class _TrackingScreenState extends State<TrackingScreen> {
         if (_followUser) {
           _updateCameraPosition(newPos);
         }
-      }
-    });
+      },
+    );
   }
 
   Future<void> _updateCameraPosition(LatLng position) async {
     final GoogleMapController controller = await _mapController.future;
+
     _isProgrammaticMove = true;
-    controller.animateCamera(CameraUpdate.newLatLng(position));
+    controller.animateCamera(
+      CameraUpdate.newLatLng(position),
+    );
   }
 
-  void _stopRoute(TrackingProvider trackingProvider) {
-    final routeSummary = RouteSummary(
-      title: 'Uus marsruut',
-      date: DateTime.now(),
-      startTime: TimeOfDay.now(), // Simplified
-      endTime: TimeOfDay.now(),
-      distanceKm: trackingProvider.totalDistance / 1000,
-      duration: trackingProvider.duration,
-      steps: 0, // Need step provider for this
-      calories: 0,
-      averageSpeed:
-          (trackingProvider.totalDistance / 1000) /
-          (trackingProvider.duration.inSeconds / 3600),
-    );
+  Future<void> _startRoute(TrackingProvider trackingProvider) async {
+    if (_isSavingRoute) {
+      return;
+    }
 
-    trackingProvider.stopTracking();
+    final hasBgPerm =
+    await PermissionHelper.requestBackgroundLocationPermission(context);
 
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ResultScreen(route: routeSummary)),
-    );
+    if (!hasBgPerm) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Taustal asukoha õigus on jälgimise alustamiseks vajalik.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    _stepService.startCounting();
+    await trackingProvider.startTracking();
+  }
+
+  Future<void> _stopRoute(TrackingProvider trackingProvider) async {
+    if (_isSavingRoute) {
+      return;
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Kasutaja pole sisse logitud'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSavingRoute = true;
+    });
+
+    try {
+      final endTime = DateTime.now();
+      final trackedDuration = trackingProvider.duration;
+
+      await trackingProvider.stopTracking();
+
+      final steps = await _stepService.stopCounting();
+
+      final distanceKm = trackingProvider.totalDistance / 1000;
+      final durationSeconds = trackedDuration.inSeconds;
+
+      final startTime = endTime.subtract(
+        Duration(seconds: durationSeconds),
+      );
+
+      final averageSpeed = durationSeconds <= 0
+          ? 0.0
+          : distanceKm / (durationSeconds / 3600);
+
+      final profile = await UserService().getUserProfile(user.uid);
+      final profileWeight = profile?.weightKg ?? 70.0;
+      final weightKg = profileWeight <= 0 ? 70.0 : profileWeight;
+
+      final calories = weightKg * distanceKm * 0.9;
+
+      final routeId = 'route_${DateTime.now().millisecondsSinceEpoch}';
+
+      final route = RouteModel(
+        routeId: routeId,
+        userId: user.uid,
+        title: 'Uus marsruut',
+        startTime: startTime,
+        endTime: endTime,
+        distanceKm: distanceKm,
+        durationSeconds: durationSeconds,
+        steps: steps,
+        calories: calories,
+        averageSpeed: averageSpeed,
+        activityType: 'walking',
+        createdAt: endTime,
+      );
+
+      final savedPoints = List<LatLng>.from(trackingProvider.routePoints);
+
+      final pointInterval = savedPoints.length <= 1
+          ? 0.0
+          : durationSeconds / (savedPoints.length - 1);
+
+      final routePoints = savedPoints.asMap().entries.map((entry) {
+        final index = entry.key;
+        final point = entry.value;
+
+        return RoutePoint(
+          pointId: 'point_$index',
+          routeId: routeId,
+          latitude: point.latitude,
+          longitude: point.longitude,
+          accuracy: 0,
+          altitude: 0,
+          timestamp: startTime.add(
+            Duration(seconds: (pointInterval * index).round()),
+          ),
+        );
+      }).toList();
+
+      await RouteService().saveRoute(
+        route: route,
+        points: routePoints,
+      );
+
+      await StatisticsService().calculateAndSaveDailySummary(
+        userId: user.uid,
+        date: endTime,
+      );
+
+      if (!mounted) return;
+
+      final routeSummary = RouteSummary(
+        title: route.title,
+        date: route.startTime,
+        startTime: TimeOfDay.fromDateTime(route.startTime),
+        endTime: TimeOfDay.fromDateTime(route.endTime),
+        distanceKm: route.distanceKm,
+        duration: Duration(seconds: route.durationSeconds),
+        steps: route.steps,
+        calories: route.calories.round(),
+        averageSpeed: route.averageSpeed,
+      );
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ResultScreen(route: routeSummary),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Marsruudi salvestamine ebaõnnestus: $error'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingRoute = false;
+        });
+      }
+    }
   }
 
   @override
@@ -144,35 +315,41 @@ class _TrackingScreenState extends State<TrackingScreen> {
             Positioned.fill(
               top: 90,
               child: _currentPos == null
-                  ? const Center(child: CircularProgressIndicator(color: _lime))
+                  ? const Center(
+                child: CircularProgressIndicator(color: _lime),
+              )
                   : GoogleMap(
-                      myLocationEnabled: true,
-                      myLocationButtonEnabled: false,
-                      zoomControlsEnabled: false,
-                      mapToolbarEnabled: false,
-                      polylines: {
-                        Polyline(
-                          polylineId: const PolylineId("route"),
-                          points: trackingProvider.routePoints,
-                          color: _lime,
-                          width: 5,
-                        ),
-                      },
-                      onMapCreated: (controller) =>
-                          _mapController.complete(controller),
-                      initialCameraPosition: CameraPosition(
-                        target: _currentPos!,
-                        zoom: DEFAULT_ZOOM,
-                      ),
-                      onCameraMoveStarted: () {
-                        // If movement is NOT programmatic, it's a gesture (REASON_GESTURE)
-                        if (!_isProgrammaticMove && _followUser) {
-                          setState(() => _followUser = false);
-                        }
-                        _isProgrammaticMove =
-                            false; // Reset for the next movement
-                      },
-                    ),
+                myLocationEnabled: true,
+                myLocationButtonEnabled: false,
+                zoomControlsEnabled: false,
+                mapToolbarEnabled: false,
+                polylines: {
+                  Polyline(
+                    polylineId: const PolylineId('route'),
+                    points: trackingProvider.routePoints,
+                    color: _lime,
+                    width: 5,
+                  ),
+                },
+                onMapCreated: (controller) {
+                  if (!_mapController.isCompleted) {
+                    _mapController.complete(controller);
+                  }
+                },
+                initialCameraPosition: CameraPosition(
+                  target: _currentPos!,
+                  zoom: defaultZoom,
+                ),
+                onCameraMoveStarted: () {
+                  if (!_isProgrammaticMove && _followUser) {
+                    setState(() {
+                      _followUser = false;
+                    });
+                  }
+
+                  _isProgrammaticMove = false;
+                },
+              ),
             ),
             Positioned.fill(
               top: 90,
@@ -212,7 +389,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
                               : Icons.location_searching,
                           active: _followUser,
                           onPressed: () {
-                            setState(() => _followUser = true);
+                            setState(() {
+                              _followUser = true;
+                            });
+
                             if (_currentPos != null) {
                               _updateCameraPosition(_currentPos!);
                             }
@@ -221,31 +401,25 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         const Spacer(),
                         _RouteControlPanel(
                           tracking: trackingProvider.isTracking,
+                          saving: _isSavingRoute,
                           onPause: () async {
                             if (trackingProvider.isTracking) {
-                              trackingProvider.stopTracking();
-                            } else {
-                              bool hasBgPerm =
-                                  await PermissionHelper.requestBackgroundLocationPermission(
-                                    context,
-                                  );
-                              if (hasBgPerm) {
-                                trackingProvider.startTracking();
-                              } else {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        "Taustal asukoha õigus on jälgimise alustamiseks vajalik.",
-                                      ),
-                                    ),
-                                  );
-                                }
-                              }
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Marsruudi salvestamiseks vajuta Stop.',
+                                  ),
+                                ),
+                              );
+                              return;
                             }
+
+                            await _startRoute(trackingProvider);
                           },
-                          onStop: trackingProvider.isTracking
-                              ? () => _stopRoute(trackingProvider)
+                          onStop: trackingProvider.isTracking && !_isSavingRoute
+                              ? () {
+                            _stopRoute(trackingProvider);
+                          }
                               : null,
                         ),
                       ],
@@ -254,6 +428,29 @@ class _TrackingScreenState extends State<TrackingScreen> {
                 ),
               ],
             ),
+            if (_isSavingRoute)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.42),
+                  child: const Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(color: _lime),
+                        SizedBox(height: 16),
+                        Text(
+                          'Salvestan marsruuti...',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -271,7 +468,9 @@ class _MapHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 18),
       decoration: const BoxDecoration(
         color: _background,
-        border: Border(bottom: BorderSide(color: Color(0x1FFFFFFF))),
+        border: Border(
+          bottom: BorderSide(color: Color(0x1FFFFFFF)),
+        ),
       ),
       child: Row(
         children: [
@@ -303,7 +502,10 @@ class _MapHeader extends StatelessWidget {
 }
 
 class _TopStats extends StatelessWidget {
-  const _TopStats({required this.distanceKm, required this.duration});
+  const _TopStats({
+    required this.distanceKm,
+    required this.duration,
+  });
 
   final double distanceKm;
   final Duration duration;
@@ -329,7 +531,10 @@ class _TopStats extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _StatGlassCard(label: 'Aeg', value: formatDuration(duration)),
+          child: _StatGlassCard(
+            label: 'Aeg',
+            value: formatDuration(duration),
+          ),
         ),
       ],
     );
@@ -362,12 +567,18 @@ class _StatGlassCard extends StatelessWidget {
             blurRadius: 26,
             offset: Offset(0, 16),
           ),
-          BoxShadow(color: Color(0x2235F46E), blurRadius: 26),
+          BoxShadow(
+            color: Color(0x2235F46E),
+            blurRadius: 26,
+          ),
         ],
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xE3293E47), Color(0xE61A2A31)],
+          colors: [
+            Color(0xE3293E47),
+            Color(0xE61A2A31),
+          ],
         ),
       ),
       child: Column(
@@ -423,11 +634,13 @@ class _StatGlassCard extends StatelessWidget {
 class _RouteControlPanel extends StatelessWidget {
   const _RouteControlPanel({
     required this.tracking,
+    required this.saving,
     required this.onPause,
     required this.onStop,
   });
 
   final bool tracking;
+  final bool saving;
   final VoidCallback onPause;
   final VoidCallback? onStop;
 
@@ -445,7 +658,10 @@ class _RouteControlPanel extends StatelessWidget {
             blurRadius: 34,
             offset: Offset(0, 18),
           ),
-          BoxShadow(color: Color(0x3335F46E), blurRadius: 30),
+          BoxShadow(
+            color: Color(0x3335F46E),
+            blurRadius: 30,
+          ),
         ],
       ),
       child: Row(
@@ -456,7 +672,7 @@ class _RouteControlPanel extends StatelessWidget {
             foreground: _lime,
             background: Colors.transparent,
             borderColor: _lime,
-            onPressed: onPause,
+            onPressed: saving ? null : onPause,
             tooltip: tracking ? 'Paus' : 'Alusta',
           ),
           const SizedBox(width: 14),
@@ -465,7 +681,7 @@ class _RouteControlPanel extends StatelessWidget {
             foreground: const Color(0xFF6B1212),
             background: _stopColor,
             borderColor: _stopColor,
-            onPressed: onStop,
+            onPressed: saving ? null : onStop,
             tooltip: 'Peata',
           ),
         ],
@@ -487,7 +703,12 @@ class _GpsIndicator extends StatelessWidget {
           decoration: const BoxDecoration(
             color: _lime,
             shape: BoxShape.circle,
-            boxShadow: [BoxShadow(color: Color(0x8835F46E), blurRadius: 16)],
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x8835F46E),
+                blurRadius: 16,
+              ),
+            ],
           ),
         ),
         const SizedBox(width: 12),
@@ -565,7 +786,11 @@ class _RoundRouteButton extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(icon, color: foreground, size: 30),
+            child: Icon(
+              icon,
+              color: foreground,
+              size: 30,
+            ),
           ),
         ),
       ),
@@ -594,22 +819,35 @@ class _MapToolButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: active ? _lime.withValues(alpha: 0.2) : _cardColor,
           shape: BoxShape.circle,
-          border: Border.all(color: active ? _lime : _lineColor),
+          border: Border.all(
+            color: active ? _lime : _lineColor,
+          ),
           boxShadow: [
             if (active)
-              const BoxShadow(color: Color(0x3335F46E), blurRadius: 12),
+              const BoxShadow(
+                color: Color(0x3335F46E),
+                blurRadius: 12,
+              ),
           ],
         ),
-        child: Icon(icon, color: active ? _lime : _textMuted, size: 28),
+        child: Icon(
+          icon,
+          color: active ? _lime : _textMuted,
+          size: 28,
+        ),
       ),
     );
   }
 }
 
 String _formatPace(double distanceKm, Duration duration) {
-  if (distanceKm <= 0 || duration == Duration.zero) return "0'00";
+  if (distanceKm <= 0 || duration == Duration.zero) {
+    return "0'00";
+  }
+
   final totalSeconds = duration.inSeconds / distanceKm;
   final minutes = totalSeconds ~/ 60;
   final seconds = (totalSeconds % 60).round().toString().padLeft(2, '0');
+
   return "$minutes'$seconds";
 }
