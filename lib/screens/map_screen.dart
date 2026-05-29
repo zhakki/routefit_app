@@ -9,17 +9,14 @@ import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../providers/tracking_provider.dart';
+import '../theme/app_colors.dart';
 import '../utils/map_utils.dart';
 import '../utils/permission_helper.dart';
 import '../widgets/map_header.dart';
 import '../widgets/map_tool_button.dart';
 import '../widgets/route_control_panel.dart';
-import '../widgets/route_data.dart';
 import '../widgets/tracking_stats.dart';
 import 'result_screen.dart';
-
-const _background = Color(0xFF101415);
-const _lime = Color(0xFFB6FF00);
 
 const double DEFAULT_ZOOM = 18;
 
@@ -143,7 +140,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     final trackingProvider = Provider.of<TrackingProvider>(context);
 
     return DecoratedBox(
-      decoration: const BoxDecoration(color: _background),
+      decoration: const BoxDecoration(color: RouteFitColors.trackingBackground),
       child: SafeArea(
         bottom: false,
         child: Stack(
@@ -151,7 +148,11 @@ class _TrackingScreenState extends State<TrackingScreen> {
             Positioned.fill(
               top: 90,
               child: _currentPos == null
-                  ? const Center(child: CircularProgressIndicator(color: _lime))
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: RouteFitColors.trackingLime,
+                      ),
+                    )
                   : GoogleMap(
                       myLocationEnabled: true,
                       myLocationButtonEnabled: false,
@@ -161,7 +162,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         Polyline(
                           polylineId: const PolylineId("route"),
                           points: trackingProvider.routePoints,
-                          color: _lime,
+                          color: RouteFitColors.trackingLime,
                           width: 5,
                         ),
                       },
@@ -190,9 +191,13 @@ class _TrackingScreenState extends State<TrackingScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        _background.withValues(alpha: 0.16),
+                        RouteFitColors.trackingBackground.withValues(
+                          alpha: 0.16,
+                        ),
                         Colors.transparent,
-                        _background.withValues(alpha: 0.20),
+                        RouteFitColors.trackingBackground.withValues(
+                          alpha: 0.20,
+                        ),
                       ],
                     ),
                   ),

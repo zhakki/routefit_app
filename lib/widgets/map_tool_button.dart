@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 
-const _cardColor = Color(0xE6101415);
-const _lineColor = Color(0x283BEA72);
-const _lime = Color(0xFFB6FF00);
-const _textMuted = Color(0xFFD0D6C9);
+import '../theme/app_colors.dart';
 
 class MapToolButton extends StatelessWidget {
   const MapToolButton({
@@ -25,15 +22,27 @@ class MapToolButton extends StatelessWidget {
         width: 52,
         height: 52,
         decoration: BoxDecoration(
-          color: active ? _lime.withValues(alpha: 0.2) : _cardColor,
+          color: active
+              ? RouteFitColors.trackingLime.withValues(alpha: 0.2)
+              : RouteFitColors.trackingCard,
           shape: BoxShape.circle,
-          border: Border.all(color: active ? _lime : _lineColor),
+          border: Border.all(
+            color: active
+                ? RouteFitColors.trackingLime
+                : RouteFitColors.trackingLine,
+          ),
           boxShadow: [
             if (active)
               const BoxShadow(color: Color(0x3335F46E), blurRadius: 12),
           ],
         ),
-        child: Icon(icon, color: active ? _lime : _textMuted, size: 28),
+        child: Icon(
+          icon,
+          color: active
+              ? RouteFitColors.trackingLime
+              : RouteFitColors.trackingMuted,
+          size: 28,
+        ),
       ),
     );
   }

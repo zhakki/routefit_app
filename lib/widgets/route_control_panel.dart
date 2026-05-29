@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
-
-const _panelColor = Color(0xE61C2B31);
-const _lineColor = Color(0x283BEA72);
-const _lime = Color(0xFFB6FF00);
-const _textMuted = Color(0xFFD0D6C9);
-const _stopColor = Color(0xFFFFA8A1);
+import '../theme/app_colors.dart';
 
 class RouteControlPanel extends StatelessWidget {
   const RouteControlPanel({
@@ -23,9 +18,9 @@ class RouteControlPanel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
       decoration: BoxDecoration(
-        color: _panelColor,
+        color: RouteFitColors.trackingPanel,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _lineColor),
+        border: Border.all(color: RouteFitColors.trackingLine),
         boxShadow: const [
           BoxShadow(
             color: Color(0xB0000000),
@@ -40,9 +35,9 @@ class RouteControlPanel extends StatelessWidget {
           const Expanded(child: GpsIndicator()),
           RoundRouteButton(
             icon: tracking ? Icons.pause : Icons.play_arrow,
-            foreground: _lime,
+            foreground: RouteFitColors.trackingLime,
             background: Colors.transparent,
-            borderColor: _lime,
+            borderColor: RouteFitColors.trackingLime,
             onPressed: onPause,
             tooltip: tracking ? 'Paus' : 'Alusta',
           ),
@@ -50,8 +45,8 @@ class RouteControlPanel extends StatelessWidget {
           RoundRouteButton(
             icon: Icons.stop,
             foreground: const Color(0xFF6B1212),
-            background: _stopColor,
-            borderColor: _stopColor,
+            background: RouteFitColors.trackingStop,
+            borderColor: RouteFitColors.trackingStop,
             onPressed: onStop,
             tooltip: 'Peata',
           ),
@@ -72,7 +67,7 @@ class GpsIndicator extends StatelessWidget {
           width: 16,
           height: 16,
           decoration: const BoxDecoration(
-            color: _lime,
+            color: RouteFitColors.trackingLime,
             shape: BoxShape.circle,
             boxShadow: [BoxShadow(color: Color(0x8835F46E), blurRadius: 16)],
           ),
@@ -87,7 +82,7 @@ class GpsIndicator extends StatelessWidget {
                 'GPS jälgimine',
                 maxLines: 1,
                 style: TextStyle(
-                  color: _lime,
+                  color: RouteFitColors.trackingLime,
                   fontSize: 14,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0,
@@ -98,7 +93,7 @@ class GpsIndicator extends StatelessWidget {
                 'Kõrge täpsus',
                 maxLines: 1,
                 style: TextStyle(
-                  color: _textMuted,
+                  color: RouteFitColors.trackingMuted,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),

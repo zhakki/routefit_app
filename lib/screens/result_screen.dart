@@ -3,15 +3,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
 import '../utils/distance_formatter.dart';
 import '../widgets/route_data.dart';
-
-const _background = Color(0xFF101415);
-const _cardColor = Color(0xE6101415);
-const _lineColor = Color(0x283BEA72);
-const _lime = Color(0xFFB6FF00);
-const _green = Color(0xFF35F46E);
-const _textMuted = Color(0xFFD0D6C9);
 
 class ResultScreen extends StatelessWidget {
   const ResultScreen({required this.route, this.mapImage, super.key});
@@ -22,7 +16,7 @@ class ResultScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: const BoxDecoration(color: _background),
+      decoration: const BoxDecoration(color: RouteFitColors.trackingBackground),
       child: SafeArea(
         bottom: false,
         child: ListView(
@@ -87,7 +81,7 @@ class _ResultHeader extends StatelessWidget {
             'RouteFit',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: _lime,
+              color: RouteFitColors.trackingLime,
               fontSize: 28,
               fontStyle: FontStyle.italic,
               fontWeight: FontWeight.w900,
@@ -116,7 +110,7 @@ class _CompleteLabel extends StatelessWidget {
       children: [
         DecoratedBox(
           decoration: BoxDecoration(
-            color: _lime,
+            color: RouteFitColors.trackingLime,
             shape: BoxShape.circle,
             boxShadow: [BoxShadow(color: Color(0x8835F46E), blurRadius: 16)],
           ),
@@ -126,7 +120,7 @@ class _CompleteLabel extends StatelessWidget {
         Text(
           'TREENING LÕPETATUD',
           style: TextStyle(
-            color: _lime,
+            color: RouteFitColors.trackingLime,
             fontSize: 14,
             fontWeight: FontWeight.w900,
             letterSpacing: 0,
@@ -187,7 +181,11 @@ class _RouteMapCard extends StatelessWidget {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.location_on_outlined, color: _lime, size: 18),
+                    Icon(
+                      Icons.location_on_outlined,
+                      color: RouteFitColors.trackingLime,
+                      size: 18,
+                    ),
                     SizedBox(width: 9),
                     Text(
                       'Marsruudi ülevaade',
@@ -293,12 +291,12 @@ class _MetricCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: _lime, size: 28),
+          Icon(icon, color: RouteFitColors.trackingLime, size: 28),
           const SizedBox(height: 18),
           Text(
             title,
             style: const TextStyle(
-              color: _textMuted,
+              color: RouteFitColors.trackingMuted,
               fontSize: 15,
               fontWeight: FontWeight.w900,
             ),
@@ -321,7 +319,7 @@ class _MetricCard extends StatelessWidget {
           Text(
             subtitle,
             style: const TextStyle(
-              color: _textMuted,
+              color: RouteFitColors.trackingMuted,
               fontSize: 15,
               fontWeight: FontWeight.w700,
             ),
@@ -357,7 +355,7 @@ class _CompactMetricCard extends StatelessWidget {
               color: const Color(0xFF283A18),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: _lime, size: 30),
+            child: Icon(icon, color: RouteFitColors.trackingLime, size: 30),
           ),
           const SizedBox(width: 18),
           Expanded(
@@ -369,7 +367,7 @@ class _CompactMetricCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: _textMuted,
+                    color: RouteFitColors.trackingMuted,
                     fontSize: 15,
                     fontWeight: FontWeight.w900,
                   ),
@@ -419,7 +417,7 @@ class _AverageSpeedCard extends StatelessWidget {
                   const Text(
                     'Keskmine kiirus',
                     style: TextStyle(
-                      color: _textMuted,
+                      color: RouteFitColors.trackingMuted,
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
                     ),
@@ -443,7 +441,7 @@ class _AverageSpeedCard extends StatelessWidget {
                           const TextSpan(
                             text: ' km/h',
                             style: TextStyle(
-                              color: _textMuted,
+                              color: RouteFitColors.trackingMuted,
                               fontSize: 15,
                               fontWeight: FontWeight.w900,
                             ),
@@ -509,7 +507,7 @@ class _SaveRouteButton extends StatelessWidget {
       onPressed: onPressed,
       style: FilledButton.styleFrom(
         minimumSize: const Size.fromHeight(76),
-        backgroundColor: _lime,
+        backgroundColor: RouteFitColors.trackingLime,
         foregroundColor: Colors.black,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
@@ -565,9 +563,9 @@ class _GlassCard extends StatelessWidget {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: _cardColor,
+        color: RouteFitColors.trackingCard,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: _lineColor),
+        border: Border.all(color: RouteFitColors.trackingLine),
         boxShadow: [
           const BoxShadow(
             color: Color(0xAA030607),
@@ -575,7 +573,7 @@ class _GlassCard extends StatelessWidget {
             offset: Offset(0, 16),
           ),
           BoxShadow(
-            color: glow ? const Color(0x5535F46E) : const Color(0x223BEA72),
+            color: glow ? const Color(0x5535F46E) : RouteFitColors.trackingLine,
             blurRadius: glow ? 34 : 24,
             offset: const Offset(0, 0),
           ),
@@ -668,7 +666,11 @@ class _RouteMapPainter extends CustomPainter {
       ..shader = const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [_green, _lime, _green],
+        colors: [
+          RouteFitColors.trackingGreen,
+          RouteFitColors.trackingLime,
+          RouteFitColors.trackingGreen,
+        ],
       ).createShader(Offset.zero & size);
 
     canvas.drawPath(routePath, glowPaint);

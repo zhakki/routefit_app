@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 class MapHeader extends StatelessWidget {
   const MapHeader({super.key});
@@ -9,7 +10,7 @@ class MapHeader extends StatelessWidget {
       height: 90,
       padding: const EdgeInsets.symmetric(horizontal: 18),
       decoration: const BoxDecoration(
-        color: Color(0xFF101415),
+        color: RouteFitColors.trackingBackground,
         border: Border(bottom: BorderSide(color: Color(0x1FFFFFFF))),
       ),
       child: Row(
