@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../providers/tracking_provider.dart';
+import '../utils/map_utils.dart';
 import '../utils/permission_helper.dart';
 import '../widgets/map_header.dart';
 import '../widgets/map_tool_button.dart';
@@ -112,29 +113,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
     // 1. Calculate bounds to fit the entire route
     if (trackingProvider.routePoints.isNotEmpty) {
-      LatLngBounds bounds;
-      if (trackingProvider.routePoints.length == 1) {
-        bounds = LatLngBounds(
-          southwest: trackingProvider.routePoints.first,
-          northeast: trackingProvider.routePoints.first,
-        );
-      } else {
-        double minLat = trackingProvider.routePoints.first.latitude;
-        double minLng = trackingProvider.routePoints.first.longitude;
-        double maxLat = trackingProvider.routePoints.first.latitude;
-        double maxLng = trackingProvider.routePoints.first.longitude;
-
-        for (var point in trackingProvider.routePoints) {
-          if (point.latitude < minLat) minLat = point.latitude;
-          if (point.latitude > maxLat) maxLat = point.latitude;
-          if (point.longitude < minLng) minLng = point.longitude;
-          if (point.longitude > maxLng) maxLng = point.longitude;
-        }
-        bounds = LatLngBounds(
-          southwest: LatLng(minLat, minLng),
-          northeast: LatLng(maxLat, maxLng),
-        );
-      }
+      final bounds = MapUtils.getBounds(trackingProvider.routePoints);
 
       // Move camera and wait for animation
       _isProgrammaticMove = true;
