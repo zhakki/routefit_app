@@ -110,18 +110,23 @@ class _TrackingScreenState extends State<TrackingScreen> {
   }
 
   void _stopRoute(TrackingProvider trackingProvider) {
+    final now = DateTime.now();
+    final start = trackingProvider.startTime ?? now;
+    final distanceKm = trackingProvider.totalDistance / 1000;
+    final duration = trackingProvider.duration;
+
     final routeSummary = RouteSummary(
       title: 'Uus marsruut',
-      date: DateTime.now(),
-      startTime: TimeOfDay.now(), // Simplified
-      endTime: TimeOfDay.now(),
-      distanceKm: trackingProvider.totalDistance / 1000,
-      duration: trackingProvider.duration,
-      steps: 0, // Need step provider for this
-      calories: 0,
-      averageSpeed:
-          (trackingProvider.totalDistance / 1000) /
-          (trackingProvider.duration.inSeconds / 3600),
+      date: start,
+      startTime: TimeOfDay.fromDateTime(start),
+      endTime: TimeOfDay.fromDateTime(now),
+      distanceKm: distanceKm,
+      duration: duration,
+      steps: 0, // Placeholder
+      calories: 0, // Placeholder
+      averageSpeed: duration.inSeconds > 0
+          ? (distanceKm / (duration.inSeconds / 3600))
+          : 0,
     );
 
     trackingProvider.stopTracking();

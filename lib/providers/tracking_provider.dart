@@ -16,6 +16,7 @@ class TrackingProvider extends ChangeNotifier {
   Timer? _timer;
   Duration _duration = Duration.zero;
   double _totalDistance = 0.0;
+  DateTime? _startTime;
 
   // Getters
   bool get isTracking => _isTracking;
@@ -25,6 +26,8 @@ class TrackingProvider extends ChangeNotifier {
   Duration get duration => _duration;
 
   double get totalDistance => _totalDistance;
+
+  DateTime? get startTime => _startTime;
 
   double _calculateDistance(LatLng p1, LatLng p2) {
     var p = 0.017453292519943295;
@@ -84,6 +87,7 @@ class TrackingProvider extends ChangeNotifier {
     }
 
     _isTracking = true;
+    _startTime = DateTime.now();
     _duration = Duration.zero;
     _stopwatch.reset();
     _stopwatch.start();
