@@ -212,6 +212,12 @@ class TrackingProvider extends ChangeNotifier {
   }
 
   Future<RouteSummary> saveTrackedRoute() async {
+    if (!_isTracking)
+      throw Exception('Salvestamiseks puudub aktiivne treening');
+
+    // 1. Stop tracking first to finalize all values (steps, distance, time)
+    await stopTracking();
+
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception('Kasutaja pole sisse logitud');
 
