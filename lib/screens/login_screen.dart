@@ -250,60 +250,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ],
                               ),
-                              const _DividerLabel(),
-                              const SizedBox(height: 22),
-                              const Row(
-                                children: [
-                                  Expanded(
-                                    child: _SocialButton(
-                                      icon: Icons.g_mobiledata,
-                                      label: 'Google',
-                                    ),
-                                  ),
-                                  SizedBox(width: 16),
-                                  Expanded(
-                                    child: _SocialButton(
-                                      icon: Icons.apple,
-                                      label: 'Apple',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 32),
-                              Wrap(
-                                alignment: WrapAlignment.center,
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                spacing: 6,
-                                children: [
-                                  const Text(
-                                    'Uus RouteFitis?',
-                                    style: TextStyle(
-                                      color: _muted,
-                                      fontSize: 17,
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => const RegisterScreen(),
-                                      ),
-                                    ),
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: _lime,
-                                      padding: EdgeInsets.zero,
-                                      minimumSize: Size.zero,
-                                      tapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                      textStyle: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w800,
-                                        fontFamily: 'Montserrat',
-                                      ),
-                                    ),
-                                    child: const Text('Loo konto'),
-                                  ),
-                                ],
-                              ),
                             ],
                           ),
                         ),
