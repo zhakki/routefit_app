@@ -7,8 +7,12 @@ import '../models/route_model.dart';
 class StatisticsService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  DocumentReference<Map<String, dynamic>> _userDoc(String userId) {
+    return _firestore.collection('users').doc(userId);
+  }
+
   Future<int> getDailyStepGoal(String userId) async {
-    final doc = await _firestore.collection('user_settings').doc(userId).get();
+    final doc = await _userDoc(userId).collection('settings').doc('main').get();
 
     if (!doc.exists || doc.data() == null) {
       return 10000;
@@ -25,9 +29,8 @@ class StatisticsService {
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
 
-    final snapshot = await _firestore
+    final snapshot = await _userDoc(userId)
         .collection('routes')
-        .where('userId', isEqualTo: userId)
         .where(
       'startTime',
       isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
@@ -39,13 +42,15 @@ class StatisticsService {
         .get();
 
     int totalSteps = 0;
-    double totalCalories = 0;
-    double totalDistanceKm = 0;
+    int totalDurationSeconds = 0;
+    double totalCalories = 0.0;
+    double totalDistanceKm = 0.0;
 
     for (final doc in snapshot.docs) {
       final route = RouteModel.fromMap(doc.data());
 
       totalSteps += route.steps;
+      totalDurationSeconds += route.durationSeconds;
       totalCalories += route.calories;
       totalDistanceKm += route.distanceKm;
     }
@@ -57,8 +62,7 @@ class StatisticsService {
         : (totalSteps / stepGoal * 100).clamp(0, 100).toDouble();
 
     final now = DateTime.now();
-    final dateText = DateFormat('yyyy-MM-dd').format(startOfDay);
-    final summaryId = '${userId}_$dateText';
+    final summaryId = DateFormat('yyyy-MM-dd').format(startOfDay);
 
     return DailyStepSummary(
       summaryId: summaryId,
@@ -69,16 +73,17 @@ class StatisticsService {
       progressPercent: progressPercent,
       calories: totalCalories,
       distanceKm: totalDistanceKm,
+      durationSeconds: totalDurationSeconds,
       createdAt: now,
       updatedAt: now,
     );
   }
 
   Future<void> saveDailySummary(DailyStepSummary summary) async {
-    await _firestore
-        .collection('daily_step_summaries')
+    await _userDoc(summary.userId)
+        .collection('daily_summaries')
         .doc(summary.summaryId)
-        .set(summary.toMap());
+        .set(summary.toMap(), SetOptions(merge: true));
   }
 
   Future<DailyStepSummary> calculateAndSaveDailySummary({
@@ -136,7 +141,12 @@ class StatisticsService {
     );
   }
 
-
+  int calculateTotalWeeklyDuration(List<DailyStepSummary> summaries) {
+    return summaries.fold(
+      0,
+          (total, item) => total + item.durationSeconds,
+    );
+  }
 
   int calculateCompletedGoalDays(List<DailyStepSummary> summaries) {
     return summaries.where((item) => item.totalSteps >= item.stepGoal).length;

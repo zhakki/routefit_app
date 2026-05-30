@@ -1,9 +1,12 @@
 import 'dart:math' as math;
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../models/route_model.dart';
+import '../services/route_service.dart';
+import '../services/statistics_service.dart';
 import '../utils/distance_formatter.dart';
-import '../widgets/route_data.dart';
 
 const _background = Color(0xFF0B0F10);
 const _cardColor = Color(0xFF101415);
@@ -19,76 +22,184 @@ class HomeScreen extends StatelessWidget {
 
   final VoidCallback onStartRoute;
 
-  @override
-  Widget build(BuildContext context) {
-    const todaySteps = 8500;
-    const dailyGoal = 10000;
-    const weekSteps = 54200;
-    const weekGoal = 70000;
-    const progress = todaySteps / dailyGoal;
-    const weekRemaining = weekGoal - weekSteps;
-    final route = demoRoutes.first;
+  Future<_HomeDashboardData> _loadDashboardData() async {
+    final user = FirebaseAuth.instance.currentUser;
 
-    return DecoratedBox(
-      decoration: const BoxDecoration(color: _background),
-      child: SafeArea(
-        bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-          children: [
-            const _HomeHeader(),
-            const SizedBox(height: 28),
-            _GlassCard(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
-              child: Column(
-                children: [
-                  GradientStepRing(
-                    progress: progress,
-                    size: 232,
-                    steps: todaySteps,
-                    goal: dailyGoal,
-                  ),
-                  const SizedBox(height: 26),
-                  Text(
-                    '${(progress * 100).round()}% valmis',
-                    style: const TextStyle(
-                      color: _lime,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    '${_formatCompact(dailyGoal - todaySteps)} sammu jäänud',
-                    style: const TextStyle(
-                      color: _textMuted,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 18),
-            const _DailyGoalCard(
-              goal: dailyGoal,
-              remaining: dailyGoal - todaySteps,
-            ),
-            const SizedBox(height: 18),
-            _WeeklyProgressCard(
-              steps: weekSteps,
-              goal: weekGoal,
-              remaining: weekRemaining,
-            ),
-            const SizedBox(height: 18),
-            _LastRouteCard(route: route),
-            const SizedBox(height: 14),
-            _NewRouteButton(onPressed: onStartRoute),
-          ],
-        ),
-      ),
+    if (user == null) {
+      return const _HomeDashboardData(
+        todaySteps: 0,
+        dailyGoal: 10000,
+        weekSteps: 0,
+        weekGoal: 70000,
+        lastRoute: null,
+      );
+    }
+
+    final statisticsService = StatisticsService();
+    final routeService = RouteService();
+
+    final today = DateTime.now();
+
+    final dailySummary = await statisticsService.calculateDailySummary(
+      userId: user.uid,
+      date: today,
+    );
+
+    final weeklySummaries = await statisticsService.calculateWeeklySummary(
+      userId: user.uid,
+      selectedDate: today,
+    );
+
+    final routes = await routeService.getUserRoutes(user.uid);
+
+    final weekSteps = statisticsService.calculateTotalWeeklySteps(
+      weeklySummaries,
+    );
+
+    final weekGoal = dailySummary.stepGoal * 7;
+
+    return _HomeDashboardData(
+      todaySteps: dailySummary.totalSteps,
+      dailyGoal: dailySummary.stepGoal,
+      weekSteps: weekSteps,
+      weekGoal: weekGoal,
+      lastRoute: routes.isNotEmpty ? routes.first : null,
     );
   }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<_HomeDashboardData>(
+      future: _loadDashboardData(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const DecoratedBox(
+            decoration: BoxDecoration(color: _background),
+            child: Center(
+              child: CircularProgressIndicator(color: _lime),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return DecoratedBox(
+            decoration: const BoxDecoration(color: _background),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Andmeid ei saanud laadida',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        final data = snapshot.data ??
+            const _HomeDashboardData(
+              todaySteps: 0,
+              dailyGoal: 10000,
+              weekSteps: 0,
+              weekGoal: 70000,
+              lastRoute: null,
+            );
+
+        final todaySteps = data.todaySteps;
+        final dailyGoal = data.dailyGoal;
+        final weekSteps = data.weekSteps;
+        final weekGoal = data.weekGoal;
+
+        final progress = dailyGoal == 0 ? 0.0 : todaySteps / dailyGoal;
+        final dailyRemaining = math.max(0, dailyGoal - todaySteps);
+        final weekRemaining = math.max(0, weekGoal - weekSteps);
+
+        return DecoratedBox(
+          decoration: const BoxDecoration(color: _background),
+          child: SafeArea(
+            bottom: false,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+              children: [
+                const _HomeHeader(),
+                const SizedBox(height: 28),
+                _GlassCard(
+                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
+                  child: Column(
+                    children: [
+                      GradientStepRing(
+                        progress: progress,
+                        size: 232,
+                        steps: todaySteps,
+                        goal: dailyGoal,
+                      ),
+                      const SizedBox(height: 26),
+                      Text(
+                        '${(progress * 100).round()}% valmis',
+                        style: const TextStyle(
+                          color: _lime,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        '${_formatCompact(dailyRemaining)} sammu jäänud',
+                        style: const TextStyle(
+                          color: _textMuted,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 18),
+                _DailyGoalCard(
+                  goal: dailyGoal,
+                  remaining: dailyRemaining,
+                ),
+                const SizedBox(height: 18),
+                _WeeklyProgressCard(
+                  steps: weekSteps,
+                  goal: weekGoal,
+                  remaining: weekRemaining,
+                ),
+                const SizedBox(height: 18),
+                if (data.lastRoute != null)
+                  _LastRouteCard(route: data.lastRoute!)
+                else
+                  const _EmptyLastRouteCard(),
+                const SizedBox(height: 14),
+                _NewRouteButton(onPressed: onStartRoute),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _HomeDashboardData {
+  const _HomeDashboardData({
+    required this.todaySteps,
+    required this.dailyGoal,
+    required this.weekSteps,
+    required this.weekGoal,
+    required this.lastRoute,
+  });
+
+  final int todaySteps;
+  final int dailyGoal;
+  final int weekSteps;
+  final int weekGoal;
+  final RouteModel? lastRoute;
 }
 
 class _HomeHeader extends StatelessWidget {
@@ -278,7 +389,7 @@ class _WeeklyProgressCard extends StatelessWidget {
 class _LastRouteCard extends StatelessWidget {
   const _LastRouteCard({required this.route});
 
-  final RouteSummary route;
+  final RouteModel route;
 
   @override
   Widget build(BuildContext context) {
@@ -362,12 +473,12 @@ class _LastRouteCard extends StatelessWidget {
                         const SizedBox(width: 24),
                         _RouteMetric(
                           label: 'AEG',
-                          value: '${route.duration.inMinutes} min',
+                          value: '${route.durationSeconds ~/ 60} min',
                         ),
                         const SizedBox(width: 24),
                         _RouteMetric(
                           label: 'KAL',
-                          value: '${route.calories} kcal',
+                          value: '${route.calories.round()} kcal',
                         ),
                         const Spacer(),
                         const Icon(Icons.chevron_right, color: _lime, size: 32),
@@ -379,6 +490,39 @@ class _LastRouteCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _EmptyLastRouteCard extends StatelessWidget {
+  const _EmptyLastRouteCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          Text(
+            'VIIMANE MARSRUUT',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          SizedBox(height: 14),
+          Text(
+            'Marsruute pole veel salvestatud',
+            style: TextStyle(
+              color: _textMuted,
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }

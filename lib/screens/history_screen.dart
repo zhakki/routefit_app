@@ -1,54 +1,100 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../models/route_model.dart';
+import '../services/route_service.dart';
 import '../utils/distance_formatter.dart';
-import '../widgets/route_data.dart';
-import 'result_screen.dart';
+import 'route_detail_screen.dart';
 
 const _background = Color(0xFF101415);
 const _cardColor = Color(0xE6101415);
 const _lineColor = Color(0x283BEA72);
 const _lime = Color(0xFFB6FF00);
-const _green = Color(0xFF35F46E);
-const _cyan = Color(0xFF39F6D2);
 const _textMuted = Color(0xFFD0D6C9);
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
+  Future<List<RouteModel>> _loadRoutes() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return [];
+    }
+
+    return RouteService().getUserRoutes(user.uid);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(color: _background),
-      child: SafeArea(
-        bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
-          children: [
-            const _HistoryHeader(),
-            const SizedBox(height: 34),
-            const _TitleFilterRow(),
-            const SizedBox(height: 18),
-            const _TotalDistanceCard(),
-            const SizedBox(height: 26),
-            for (var index = 0; index < demoRoutes.length; index++) ...[
-              if (index == 1) ...[
-                const _MostFrequentRouteCard(),
-                const SizedBox(height: 18),
-              ],
-              _RouteHistoryGlassCard(
-                route: demoRoutes[index],
-                index: index,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ResultScreen(route: demoRoutes[index]),
+    return FutureBuilder<List<RouteModel>>(
+      future: _loadRoutes(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const DecoratedBox(
+            decoration: BoxDecoration(color: _background),
+            child: Center(
+              child: CircularProgressIndicator(color: _lime),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return DecoratedBox(
+            decoration: const BoxDecoration(color: _background),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Ajalugu ei saanud laadida',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-              if (index != demoRoutes.length - 1) const SizedBox(height: 18),
-            ],
-          ],
-        ),
-      ),
+            ),
+          );
+        }
+
+        final routes = snapshot.data ?? [];
+        final totalDistanceKm = routes.fold<double>(
+          0,
+              (total, route) => total + route.distanceKm,
+        );
+
+        return DecoratedBox(
+          decoration: const BoxDecoration(color: _background),
+          child: SafeArea(
+            bottom: false,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
+              children: [
+                const _HistoryHeader(),
+                const SizedBox(height: 34),
+                const _TitleFilterRow(),
+                const SizedBox(height: 18),
+                _TotalDistanceCard(totalDistanceKm: totalDistanceKm),
+                const SizedBox(height: 26),
+
+                if (routes.isEmpty)
+                  const _EmptyHistoryCard()
+                else
+                  for (var index = 0; index < routes.length; index++) ...[
+                    _RouteHistoryGlassCard(
+                      route: routes[index],
+                      index: index,
+                    ),
+                    if (index != routes.length - 1)
+                      const SizedBox(height: 18),
+                  ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -126,7 +172,9 @@ class _TitleFilterRow extends StatelessWidget {
 }
 
 class _TotalDistanceCard extends StatelessWidget {
-  const _TotalDistanceCard();
+  const _TotalDistanceCard({required this.totalDistanceKm});
+
+  final double totalDistanceKm;
 
   @override
   Widget build(BuildContext context) {
@@ -134,11 +182,11 @@ class _TotalDistanceCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(26, 24, 24, 24),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'KOGU VAHEMAA',
                   style: TextStyle(
                     color: _textMuted,
@@ -147,13 +195,13 @@ class _TotalDistanceCard extends StatelessWidget {
                     letterSpacing: 0,
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '142.4',
-                      style: TextStyle(
+                      totalDistanceKm.toStringAsFixed(1),
+                      style: const TextStyle(
                         color: _lime,
                         fontSize: 44,
                         height: 1,
@@ -161,8 +209,8 @@ class _TotalDistanceCard extends StatelessWidget {
                         letterSpacing: 0,
                       ),
                     ),
-                    SizedBox(width: 8),
-                    Padding(
+                    const SizedBox(width: 8),
+                    const Padding(
                       padding: EdgeInsets.only(bottom: 6),
                       child: Text(
                         'km',
@@ -214,20 +262,35 @@ class _RouteHistoryGlassCard extends StatelessWidget {
   const _RouteHistoryGlassCard({
     required this.route,
     required this.index,
-    required this.onTap,
   });
 
-  final RouteSummary route;
+  final RouteModel route;
   final int index;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final isRunning = route.activityType.toLowerCase().contains('run') ||
+        route.activityType.toLowerCase().contains('jooks');
+
     return _GlassCard(
       padding: EdgeInsets.zero,
       radius: 14,
       child: InkWell(
-        onTap: onTap,
+        onTap: () async {
+          final updated = await Navigator.of(context).push<bool>(
+            MaterialPageRoute(
+              builder: (_) => RouteDetailScreen(route: route),
+            ),
+          );
+
+          if (updated == true && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Marsruudi andmed uuendatud'),
+              ),
+            );
+          }
+        },
         borderRadius: BorderRadius.circular(14),
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -235,14 +298,14 @@ class _RouteHistoryGlassCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  _RouteIcon(active: index != 1),
+                  _RouteIcon(active: isRunning),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _routeTitle(index),
+                          route.title.isEmpty ? 'Minu marsruut' : route.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -253,7 +316,7 @@ class _RouteHistoryGlassCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          _routeDate(index),
+                          _formatRouteDate(route.startTime),
                           style: const TextStyle(
                             color: _textMuted,
                             fontSize: 13,
@@ -288,7 +351,7 @@ class _RouteHistoryGlassCard extends StatelessWidget {
                         Expanded(
                           child: _RouteStat(
                             label: 'Kestus',
-                            value: '${route.duration.inMinutes}',
+                            value: '${route.durationSeconds ~/ 60}',
                             suffix: 'min',
                           ),
                         ),
@@ -300,13 +363,13 @@ class _RouteHistoryGlassCard extends StatelessWidget {
                         Expanded(
                           child: _RouteStat(
                             label: 'Sammud',
-                            value: formatNumber(route.steps),
+                            value: _formatInt(route.steps),
                           ),
                         ),
                         Expanded(
                           child: _RouteStat(
                             label: 'Kalorid',
-                            value: '${route.calories}',
+                            value: '${route.calories.round()}',
                             suffix: 'kcal',
                           ),
                         ),
@@ -318,6 +381,46 @@ class _RouteHistoryGlassCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _EmptyHistoryCard extends StatelessWidget {
+  const _EmptyHistoryCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      radius: 14,
+      child: Column(
+        children: const [
+          Icon(
+            Icons.route_outlined,
+            color: _lime,
+            size: 48,
+          ),
+          SizedBox(height: 16),
+          Text(
+            'Marsruute pole veel salvestatud',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Alusta uut marsruuti ja pärast lõpetamist ilmub see siia.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: _textMuted,
+              fontSize: 15,
+              height: 1.35,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -403,82 +506,6 @@ class _RouteStat extends StatelessWidget {
   }
 }
 
-class _MostFrequentRouteCard extends StatelessWidget {
-  const _MostFrequentRouteCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return _GlassCard(
-      padding: EdgeInsets.zero,
-      radius: 14,
-      child: SizedBox(
-        height: 190,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: CustomPaint(painter: _FrequentRoutePainter()),
-              ),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  gradient: const LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: [Color(0xDD061011), Color(0x33101415)],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 20,
-              bottom: 22,
-              right: 20,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 7,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _lime,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      'KÕIGE SAGEDASEM MARSRUUT',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 9),
-                  const Text(
-                    'Riverside Trail Loop',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 19,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _GlassCard extends StatelessWidget {
   const _GlassCard({
@@ -518,78 +545,18 @@ class _GlassCard extends StatelessWidget {
   }
 }
 
-class _FrequentRoutePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final background = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFF0E2227), Color(0xFF06100F)],
-      ).createShader(Offset.zero & size);
-    canvas.drawRect(Offset.zero & size, background);
+String _formatRouteDate(DateTime date) {
+  final day = date.day.toString().padLeft(2, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  final hour = date.hour.toString().padLeft(2, '0');
+  final minute = date.minute.toString().padLeft(2, '0');
 
-    final plane = Path()
-      ..moveTo(size.width * 0.28, size.height * 0.92)
-      ..lineTo(size.width * 0.96, size.height * 0.58)
-      ..lineTo(size.width * 0.56, size.height * 0.10)
-      ..lineTo(size.width * 0.05, size.height * 0.44)
-      ..close();
-    canvas.drawPath(plane, Paint()..color = const Color(0x33233437));
-
-    final gridPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = const Color(0x1935F46E);
-    for (var i = 0; i < 8; i++) {
-      final t = i / 7;
-      canvas.drawLine(
-        Offset(size.width * (0.08 + t * 0.48), size.height * (0.44 + t * 0.48)),
-        Offset(size.width * (0.58 + t * 0.38), size.height * (0.10 + t * 0.48)),
-        gridPaint,
-      );
-    }
-
-    final route = Path()
-      ..moveTo(size.width * 0.33, size.height * 0.78)
-      ..lineTo(size.width * 0.48, size.height * 0.62)
-      ..lineTo(size.width * 0.38, size.height * 0.48)
-      ..lineTo(size.width * 0.58, size.height * 0.30)
-      ..lineTo(size.width * 0.76, size.height * 0.42);
-    final glow = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 12
-      ..strokeCap = StrokeCap.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12)
-      ..color = const Color(0x6635F46E);
-    final line = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round
-      ..shader = const LinearGradient(
-        colors: [_lime, _green, _cyan],
-      ).createShader(Offset.zero & size);
-
-    canvas.drawPath(route, glow);
-    canvas.drawPath(route, line);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  return '$day.$month • $hour:$minute';
 }
 
-String _routeTitle(int index) {
-  return switch (index) {
-    0 => 'Õhtune treeningjooks',
-    1 => 'Hommikune taastuskõnd',
-    _ => 'Tempotreening',
-  };
-}
-
-String _routeDate(int index) {
-  return switch (index) {
-    0 => '12. okt • 18:45',
-    1 => '11. okt • 8:15',
-    _ => '09. okt • 17:30',
-  };
+String _formatInt(int value) {
+  return value.toString().replaceAllMapped(
+    RegExp(r'\B(?=(\d{3})+(?!\d))'),
+        (_) => ' ',
+  );
 }

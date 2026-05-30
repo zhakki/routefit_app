@@ -9,6 +9,7 @@ class DailyStepSummary {
   final double progressPercent;
   final double calories;
   final double distanceKm;
+  final int durationSeconds;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -21,6 +22,7 @@ class DailyStepSummary {
     required this.progressPercent,
     required this.calories,
     required this.distanceKm,
+    required this.durationSeconds,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -35,6 +37,7 @@ class DailyStepSummary {
       'progressPercent': progressPercent,
       'calories': calories,
       'distanceKm': distanceKm,
+      'durationSeconds': durationSeconds,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
@@ -50,6 +53,7 @@ class DailyStepSummary {
       progressPercent: (map['progressPercent'] ?? 0).toDouble(),
       calories: (map['calories'] ?? 0).toDouble(),
       distanceKm: (map['distanceKm'] ?? 0).toDouble(),
+      durationSeconds: map['durationSeconds'] ?? 0,
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       updatedAt: (map['updatedAt'] as Timestamp).toDate(),
     );

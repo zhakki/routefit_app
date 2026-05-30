@@ -15,8 +15,8 @@ class TrackingProvider extends ChangeNotifier {
   // State variables
   bool _isTracking = false;
   bool _isPaused = false;
-  List<LatLng> _routePoints = [];
-  Stopwatch _stopwatch = Stopwatch();
+  final List<LatLng> _routePoints = [];
+  final Stopwatch _stopwatch = Stopwatch();
   Timer? _timer;
   Duration _duration = Duration.zero;
   double _totalDistance = 0.0;
@@ -24,15 +24,10 @@ class TrackingProvider extends ChangeNotifier {
 
   // Getters
   bool get isTracking => _isTracking;
-
   bool get isPaused => _isPaused;
-
   List<LatLng> get routePoints => _routePoints;
-
   Duration get duration => _duration;
-
   double get totalDistance => _totalDistance;
-
   DateTime? get startTime => _startTime;
 
   RouteSummary getSummary() {
@@ -47,10 +42,8 @@ class TrackingProvider extends ChangeNotifier {
       endTime: TimeOfDay.fromDateTime(now),
       distanceKm: distanceKm,
       duration: _duration,
-      steps: 0,
-      // Placeholder
-      calories: 0,
-      // Placeholder
+      steps: 0, // Placeholder
+      calories: 0, // Placeholder
       averageSpeed: _duration.inSeconds > 0
           ? (distanceKm / (_duration.inSeconds / 3600))
           : 0,
@@ -60,8 +53,7 @@ class TrackingProvider extends ChangeNotifier {
   double _calculateDistance(LatLng p1, LatLng p2) {
     var p = 0.017453292519943295;
     var c = cos;
-    var a =
-        0.5 -
+    var a = 0.5 -
         c((p2.latitude - p1.latitude) * p) / 2 +
         c(p1.latitude * p) *
             c(p2.latitude * p) *
@@ -83,6 +75,7 @@ class TrackingProvider extends ChangeNotifier {
     _routePoints.clear();
     _totalDistance = 0.0;
     _isPaused = false;
+    _startTime = DateTime.now();
 
     // Enable background mode and notification for background tracking
     try {
@@ -108,7 +101,6 @@ class TrackingProvider extends ChangeNotifier {
     }
 
     _isTracking = true;
-    _startTime = DateTime.now();
     _duration = Duration.zero;
     _stopwatch.reset();
     _stopwatch.start();
@@ -151,7 +143,9 @@ class TrackingProvider extends ChangeNotifier {
 
     // Capture location to start tracking again without adding to distance
     try {
-      final locationData = await _locationController.getLocation();
+      final locationData = await _locationController.getLocation().timeout(
+        const Duration(seconds: 2),
+      );
       if (locationData.latitude != null && locationData.longitude != null) {
         // Add point to route points but DON'T use _addPoint to avoid distance increment
         _routePoints.add(

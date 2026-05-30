@@ -8,28 +8,46 @@ class StepService {
 
   int? _startSteps;
   int _currentSteps = 0;
+  bool _isAvailable = true;
+  bool _isCounting = false;
 
   int get currentRouteSteps {
-    if (_startSteps == null) {
+    if (!_isAvailable || _startSteps == null) {
       return 0;
     }
 
     final steps = _currentSteps - _startSteps!;
-    return steps < 0 ? 0 : steps;
+
+    if (steps < 0) {
+      return 0;
+    }
+
+    return steps;
   }
 
   void startCounting() {
+    if (_isCounting) {
+      return;
+    }
+
     _startSteps = null;
     _currentSteps = 0;
+    _isAvailable = true;
+    _isCounting = true;
 
     _stepSubscription = Pedometer.stepCountStream.listen(
           (StepCount event) {
         _currentSteps = event.steps;
-
         _startSteps ??= event.steps;
       },
       onError: (error) {
-        debugPrint('Pedometer error: $error');
+        _isAvailable = false;
+        _isCounting = false;
+
+        debugPrint('Step counter is not available on this device: $error');
+
+        _stepSubscription?.cancel();
+        _stepSubscription = null;
       },
       cancelOnError: false,
     );
@@ -39,9 +57,11 @@ class StepService {
     final steps = currentRouteSteps;
 
     await _stepSubscription?.cancel();
+
     _stepSubscription = null;
     _startSteps = null;
     _currentSteps = 0;
+    _isCounting = false;
 
     return steps;
   }

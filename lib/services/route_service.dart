@@ -6,27 +6,31 @@ import '../models/route_point.dart';
 class RouteService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  CollectionReference<Map<String, dynamic>> _routesCollection(String userId) {
+    return _firestore.collection('users').doc(userId).collection('routes');
+  }
+
   Future<void> saveRoute({
     required RouteModel route,
     required List<RoutePoint> points,
   }) async {
     final batch = _firestore.batch();
 
-    final routeRef = _firestore.collection('routes').doc(route.routeId);
+    final routeRef = _routesCollection(route.userId).doc(route.routeId);
+
     batch.set(routeRef, route.toMap());
 
     for (final point in points) {
-      final pointRef = _firestore.collection('route_points').doc(point.pointId);
+      final pointRef = routeRef.collection('points').doc(point.pointId);
       batch.set(pointRef, point.toMap());
     }
 
     await batch.commit();
+
   }
 
   Future<List<RouteModel>> getUserRoutes(String userId) async {
-    final snapshot = await _firestore
-        .collection('routes')
-        .where('userId', isEqualTo: userId)
+    final snapshot = await _routesCollection(userId)
         .orderBy('startTime', descending: true)
         .get();
 
@@ -35,10 +39,13 @@ class RouteService {
         .toList();
   }
 
-  Future<List<RoutePoint>> getRoutePoints(String routeId) async {
-    final snapshot = await _firestore
-        .collection('route_points')
-        .where('routeId', isEqualTo: routeId)
+  Future<List<RoutePoint>> getRoutePoints({
+    required String userId,
+    required String routeId,
+  }) async {
+    final snapshot = await _routesCollection(userId)
+        .doc(routeId)
+        .collection('points')
         .orderBy('timestamp')
         .get();
 
@@ -47,11 +54,27 @@ class RouteService {
         .toList();
   }
 
-  Future<void> deleteRoute(String routeId) async {
-    final pointsSnapshot = await _firestore
-        .collection('route_points')
-        .where('routeId', isEqualTo: routeId)
-        .get();
+  Future<void> updateRouteTitle({
+    required String userId,
+    required String routeId,
+    required String title,
+  }) async {
+    await _routesCollection(userId).doc(routeId).set(
+      {
+        'title': title.trim(),
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
+      },
+      SetOptions(merge: true),
+    );
+  }
+
+  Future<void> deleteRoute({
+    required String userId,
+    required String routeId,
+  }) async {
+    final routeRef = _routesCollection(userId).doc(routeId);
+
+    final pointsSnapshot = await routeRef.collection('points').get();
 
     final batch = _firestore.batch();
 
@@ -59,7 +82,6 @@ class RouteService {
       batch.delete(doc.reference);
     }
 
-    final routeRef = _firestore.collection('routes').doc(routeId);
     batch.delete(routeRef);
 
     await batch.commit();
