@@ -57,6 +57,8 @@
 	<string>This app needs access to location when in the background to continue tracking your fitness routes.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>This app needs access to location to track your fitness routes.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>This app needs access to motion sensors to count your steps during activities.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

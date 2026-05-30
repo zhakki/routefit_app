@@ -75,8 +75,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
       }
     }
 
-    PermissionStatus permissionGranted = await _locationController
-        .hasPermission();
+    PermissionStatus permissionGranted =
+        await _locationController.hasPermission();
 
     if (permissionGranted == PermissionStatus.denied) {
       permissionGranted = await _locationController.requestPermission();
@@ -134,20 +134,22 @@ class _TrackingScreenState extends State<TrackingScreen> {
     final hasBgPerm =
         await PermissionHelper.requestBackgroundLocationPermission(context);
 
-    if (!hasBgPerm) {
-      if (!mounted) return;
+    if (hasBgPerm) {
+      // Also request activity recognition for steps
+      await PermissionHelper.requestActivityRecognitionPermission();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Taustal asukoha õigus on jälgimise alustamiseks vajalik.',
+      await trackingProvider.startTracking();
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Taustal asukoha õigus on jälgimise alustamiseks vajalik.',
+            ),
           ),
-        ),
-      );
-      return;
+        );
+      }
     }
-
-    await trackingProvider.startTracking();
   }
 
   Future<void> _stopRoute(TrackingProvider trackingProvider) async {
@@ -168,9 +170,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
         // Move camera and wait for animation
         _isProgrammaticMove = true;
-        await controller.animateCamera(
-          CameraUpdate.newLatLngBounds(bounds, 50),
-        );
+        await controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
         await Future.delayed(const Duration(milliseconds: 600));
       }
 
@@ -335,15 +335,15 @@ class _TrackingScreenState extends State<TrackingScreen> {
               Positioned.fill(
                 child: Container(
                   color: Colors.black.withValues(alpha: 0.42),
-                  child: const Center(
+                  child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         CircularProgressIndicator(
                           color: RouteFitColors.trackingLime,
                         ),
-                        SizedBox(height: 16),
-                        Text(
+                        const SizedBox(height: 16),
+                        const Text(
                           'Salvestan marsruuti...',
                           style: TextStyle(
                             color: Colors.white,

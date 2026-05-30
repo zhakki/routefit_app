@@ -153,4 +153,13 @@ class PermissionHelper {
 
     return false;
   }
+
+  static Future<bool> requestActivityRecognitionPermission() async {
+    var status = await Permission.activityRecognition.status;
+    if (status.isGranted) {
+      return true;
+    }
+    status = await Permission.activityRecognition.request();
+    return status.isGranted;
+  }
 }
