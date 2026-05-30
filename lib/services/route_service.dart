@@ -26,6 +26,7 @@ class RouteService {
     }
 
     await batch.commit();
+
   }
 
   Future<List<RouteModel>> getUserRoutes(String userId) async {
@@ -51,6 +52,20 @@ class RouteService {
     return snapshot.docs
         .map((doc) => RoutePoint.fromMap(doc.data()))
         .toList();
+  }
+
+  Future<void> updateRouteTitle({
+    required String userId,
+    required String routeId,
+    required String title,
+  }) async {
+    await _routesCollection(userId).doc(routeId).set(
+      {
+        'title': title.trim(),
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
+      },
+      SetOptions(merge: true),
+    );
   }
 
   Future<void> deleteRoute({
