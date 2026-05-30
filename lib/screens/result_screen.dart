@@ -15,9 +15,13 @@ class ResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(color: RouteFitColors.trackingBackground),
-      child: SafeArea(
+    return DefaultTextStyle.merge(
+      style: const TextStyle(decoration: TextDecoration.none),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          color: RouteFitColors.trackingBackground,
+        ),
+        child: SafeArea(
         bottom: false,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
@@ -56,6 +60,7 @@ class ResultScreen extends StatelessWidget {
                   Navigator.of(context).popUntil((route) => route.isFirst),
             ),
           ],
+        ),
         ),
       ),
     );
