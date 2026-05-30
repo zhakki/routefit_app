@@ -289,13 +289,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     child: _SocialButton(
                                       icon: Icons.g_mobiledata,
                                       label: 'Google',
-                                      onPressed: () {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Google sisselogimine lisatakse hiljem'),
-                                          ),
-                                        );
-                                      },
+                                      onPressed: _isLoading ? null : _signInWithGoogle,
                                     ),
                                   ),
                                   const SizedBox(width: 16),
@@ -303,13 +297,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     child: _SocialButton(
                                       icon: Icons.apple,
                                       label: 'Apple',
-                                      onPressed: () {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Apple sisselogimine lisatakse hiljem'),
-                                          ),
-                                        );
-                                      },
+                                      onPressed: _isLoading ? null : _showAppleNotAvailable,
                                     ),
                                   ),
                                 ],

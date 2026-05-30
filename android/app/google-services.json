@@ -12,7 +12,20 @@
           "package_name": "com.example.routefit_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "531464333470-njel8mujt20dop0ras55g1jv2u9fsps6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.routefit_app",
+            "certificate_hash": "7acdca3bf4d167c214a480290e545a4283bbbc89"
+          }
+        },
+        {
+          "client_id": "531464333470-p2o9g9p39030mfsidgq4ir8a4bofj8au.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCG3-nm7Xr8VJF8bc88JL777h0RjSuypQo"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "531464333470-p2o9g9p39030mfsidgq4ir8a4bofj8au.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "531464333470-u8j8ukeicuv3bcncgrvj5t7jnf92psee.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.routefitApp"
+              }
+            }
+          ]
         }
       }
     }
