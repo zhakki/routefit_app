@@ -50,6 +50,29 @@ class AuthUserFlowService {
     );
   }
 
+  Future<UserCredential> signInWithGoogleAndCreateProfile() async {
+    final credential = await _authService.signInWithGoogle();
+    final user = credential.user;
+
+    if (user == null) {
+      throw Exception('Google sign-in failed');
+    }
+
+    final existingProfile = await _userService.getUserProfile(user.uid);
+
+    if (existingProfile == null) {
+      await _userService.createUserProfile(
+        uid: user.uid,
+        email: user.email ?? '',
+        fullName: user.displayName ??
+            user.email?.split('@').first ??
+            'RouteFit user',
+      );
+    }
+
+    return credential;
+  }
+  
   Future<void> logout() {
     return _authService.logout();
   }

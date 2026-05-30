@@ -212,8 +212,9 @@ class TrackingProvider extends ChangeNotifier {
   }
 
   Future<RouteSummary> saveTrackedRoute() async {
-    if (!_isTracking)
+    if (!_isTracking) {
       throw Exception('Salvestamiseks puudub aktiivne treening');
+    }
 
     // 1. Stop tracking first to finalize all values (steps, distance, time)
     await stopTracking();
