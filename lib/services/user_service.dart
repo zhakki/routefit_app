@@ -15,8 +15,8 @@ class UserService {
     required String email,
     required String fullName,
     int age = 0,
-    double weightKg = 70.0,
-    double heightCm = 170.0,
+    double weightKg = 0.0,
+    double heightCm = 0.0,
     String gender = '',
   }) async {
     final now = DateTime.now();

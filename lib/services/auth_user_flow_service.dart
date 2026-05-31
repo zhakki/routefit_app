@@ -12,8 +12,8 @@ class AuthUserFlowService {
     required String password,
     required String fullName,
     int age = 0,
-    double weightKg = 70.0,
-    double heightCm = 170.0,
+    double weightKg = 0.0,
+    double heightCm = 0.0,
     String gender = '',
   }) async {
     final credential = await _authService.register(
