@@ -19,7 +19,7 @@ import '../widgets/route_control_panel.dart';
 import '../widgets/tracking_stats.dart';
 import 'result_screen.dart';
 
-const double DEFAULT_ZOOM = 18;
+const double defaultZoom = 18;
 
 class TrackingScreen extends StatefulWidget {
   const TrackingScreen({super.key});
@@ -241,7 +241,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                       },
                       initialCameraPosition: CameraPosition(
                         target: _currentPos!,
-                        zoom: DEFAULT_ZOOM,
+                        zoom: defaultZoom,
                       ),
                       onCameraMoveStarted: () {
                         // If movement is NOT programmatic, it's a gesture (REASON_GESTURE)

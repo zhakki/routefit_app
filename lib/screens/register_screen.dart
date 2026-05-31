@@ -46,8 +46,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         email: _email.text.trim(),
         password: _password.text.trim(),
         fullName: _name.text.trim(),
-        weightKg: 70.0,
-        heightCm: 170.0,
+        weightKg: 0.0,
+        heightCm: 0.0,
       );
 
       if (!mounted) return;

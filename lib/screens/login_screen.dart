@@ -2,9 +2,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
+import '../services/auth_user_flow_service.dart';
 import '../widgets/app_widgets.dart';
 import 'app_shell.dart';
 import 'register_screen.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -89,7 +91,55 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
   }
+  Future<void> _signInWithGoogle() async {
+    if (_isLoading) return;
 
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await AuthUserFlowService().signInWithGoogleAndCreateProfile();
+
+      if (!mounted) return;
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const AppShell()),
+      );
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) return;
+
+      final message = switch (error.code) {
+        'google-sign-in-cancelled' => 'Google sisselogimine katkestati',
+        'network-request-failed' => 'Võrguühendus puudub',
+        _ => 'Google sisselogimine ebaõnnestus: ${error.message}',
+      };
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Viga: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _showAppleNotAvailable() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Apple sisselogimine lisatakse hiljem'),
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -251,74 +301,22 @@ class _LoginScreenState extends State<LoginScreen> {
                               const SizedBox(height: 28),
                               const _DividerLabel(),
                               const SizedBox(height: 22),
-                              const Row(
+                              Row(
                                 children: [
                                   Expanded(
                                     child: _SocialButton(
                                       icon: Icons.g_mobiledata,
                                       label: 'Google',
+                                      onPressed: _isLoading ? null : _signInWithGoogle,
                                     ),
                                   ),
-                                  SizedBox(width: 16),
+                                  const SizedBox(width: 16),
                                   Expanded(
                                     child: _SocialButton(
                                       icon: Icons.apple,
                                       label: 'Apple',
+                                      onPressed: _isLoading ? null : _showAppleNotAvailable,
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const _DividerLabel(),
-                              const SizedBox(height: 22),
-                              const Row(
-                                children: [
-                                  Expanded(
-                                    child: _SocialButton(
-                                      icon: Icons.g_mobiledata,
-                                      label: 'Google',
-                                    ),
-                                  ),
-                                  SizedBox(width: 16),
-                                  Expanded(
-                                    child: _SocialButton(
-                                      icon: Icons.apple,
-                                      label: 'Apple',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 32),
-                              Wrap(
-                                alignment: WrapAlignment.center,
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                spacing: 6,
-                                children: [
-                                  const Text(
-                                    'Uus RouteFitis?',
-                                    style: TextStyle(
-                                      color: _muted,
-                                      fontSize: 17,
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => const RegisterScreen(),
-                                      ),
-                                    ),
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: _lime,
-                                      padding: EdgeInsets.zero,
-                                      minimumSize: Size.zero,
-                                      tapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                      textStyle: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w800,
-                                        fontFamily: 'Montserrat',
-                                      ),
-                                    ),
-                                    child: const Text('Loo konto'),
                                   ),
                                 ],
                               ),
@@ -541,21 +539,28 @@ class _DividerLabel extends StatelessWidget {
 }
 
 class _SocialButton extends StatelessWidget {
-  const _SocialButton({required this.icon, required this.label});
+  const _SocialButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
 
   final IconData icon;
   final String label;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
     return OutlinedButton.icon(
-      onPressed: () {},
+      onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         backgroundColor: _LoginScreenState._surfaceHigh,
         foregroundColor: _LoginScreenState._text,
         side: const BorderSide(color: Color(0x14FFFFFF)),
         minimumSize: const Size.fromHeight(58),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
         textStyle: const TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w700,
@@ -569,7 +574,11 @@ class _SocialButton extends StatelessWidget {
           color: const Color(0xFF0B0F10),
           borderRadius: BorderRadius.circular(4),
         ),
-        child: Icon(icon, color: _LoginScreenState._text, size: 22),
+        child: Icon(
+          icon,
+          color: _LoginScreenState._text,
+          size: 22,
+        ),
       ),
       label: Text(label),
     );

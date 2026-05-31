@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 import 'settings_screen.dart';
+import 'login_screen.dart';
 
 const _background = Color(0xFF101415);
 const _cardColor = Color(0xE6101415);
@@ -29,7 +30,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _weight = TextEditingController();
   final _height = TextEditingController();
 
-  String _gender = 'female';
+  String _gender = '';
   String _distanceUnit = 'KM';
   bool _locationPermissions = true;
   bool _saveRoutes = true;
@@ -103,7 +104,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             : profile!.heightCm.toStringAsFixed(1);
         _gender = profile?.gender.isNotEmpty == true
             ? profile!.gender
-            : 'female';
+            : '';
 
         _distanceUnit = (settings?.distanceUnit ?? 'km').toUpperCase();
         _locationPermissions = settings?.allowLocation ?? true;
@@ -240,8 +241,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Oled välja logitud')),
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
     );
   }
 
@@ -298,7 +300,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      initialValue: selectedGender,
+                      initialValue: selectedGender.isEmpty ? null : selectedGender,
                       dropdownColor: const Color(0xFF191C1E),
                       decoration: const InputDecoration(
                         labelText: 'Sugu',
@@ -309,6 +311,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         focusedBorder: OutlineInputBorder(
                           borderSide: BorderSide(color: _lime),
                         ),
+                      ),
+                      hint: const Text(
+                        'Pole valitud',
+                        style: TextStyle(color: _textMuted),
                       ),
                       style: const TextStyle(color: Colors.white),
                       items: const [
@@ -326,10 +332,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ],
                       onChanged: (value) {
-                        if (value == null) return;
-
                         setDialogState(() {
-                          selectedGender = value;
+                          selectedGender = value ?? '';
                         });
                       },
                     ),
