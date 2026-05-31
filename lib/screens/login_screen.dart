@@ -27,6 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   bool _isLoading = false;
+  bool _showPassword = false;
 
   @override
   void dispose() {
@@ -56,9 +57,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const AppShell()),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const AppShell()));
     } on FirebaseAuthException catch (error) {
       if (!mounted) return;
 
@@ -71,15 +72,15 @@ class _LoginScreenState extends State<LoginScreen> {
         _ => 'Sisselogimine ebaõnnestus: ${error.message}',
       };
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } catch (error) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Viga: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Viga: $error')));
     } finally {
       if (mounted) {
         setState(() {
@@ -144,8 +145,23 @@ class _LoginScreenState extends State<LoginScreen> {
                                 controller: _password,
                                 label: 'PAROOL',
                                 hintText: '••••••••',
-                                obscureText: true,
+                                obscureText: !_showPassword,
                                 validator: validatePassword,
+                                suffixIcon: IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _showPassword = !_showPassword;
+                                    });
+                                  },
+                                  splashRadius: 24,
+                                  color: _lime,
+                                  icon: Icon(
+                                    _showPassword
+                                        ? Icons.visibility_off_outlined
+                                        : Icons.visibility_outlined,
+                                    size: 30,
+                                  ),
+                                ),
                               ),
                               const SizedBox(height: 12),
                               Align(
@@ -179,21 +195,22 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   child: _isLoading
                                       ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                      color: Color(0xFF161E00),
-                                    ),
-                                  )
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                            color: Color(0xFF161E00),
+                                          ),
+                                        )
                                       : const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text('Logi sisse'),
-                                      SizedBox(width: 14),
-                                      Icon(Icons.trending_flat, size: 28),
-                                    ],
-                                  ),
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text('Logi sisse'),
+                                            SizedBox(width: 14),
+                                            Icon(Icons.trending_flat, size: 28),
+                                          ],
+                                        ),
                                 ),
                               ),
                               const SizedBox(height: 20),
@@ -219,7 +236,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                       foregroundColor: _lime,
                                       padding: EdgeInsets.zero,
                                       minimumSize: Size.zero,
-                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
                                       textStyle: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w800,
@@ -438,6 +456,7 @@ class _KineticTextField extends StatelessWidget {
     this.validator,
     this.obscureText = false,
     this.keyboardType,
+    this.suffixIcon,
   });
 
   final TextEditingController controller;
@@ -446,6 +465,7 @@ class _KineticTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final bool obscureText;
   final TextInputType? keyboardType;
+  final Widget? suffixIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -470,6 +490,8 @@ class _KineticTextField extends StatelessWidget {
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: const TextStyle(color: Color(0x4DE0E3E5), fontSize: 17),
+            suffixIcon: suffixIcon,
+            suffixIconColor: _LoginScreenState._lime,
             filled: true,
             fillColor: _LoginScreenState._surfaceLow,
             contentPadding: const EdgeInsets.symmetric(
