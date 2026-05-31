@@ -75,9 +75,7 @@ class HomeScreen extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const DecoratedBox(
             decoration: BoxDecoration(color: _background),
-            child: Center(
-              child: CircularProgressIndicator(color: _lime),
-            ),
+            child: Center(child: CircularProgressIndicator(color: _lime)),
           );
         }
 
@@ -101,7 +99,8 @@ class HomeScreen extends StatelessWidget {
           );
         }
 
-        final data = snapshot.data ??
+        final data =
+            snapshot.data ??
             const _HomeDashboardData(
               todaySteps: 0,
               dailyGoal: 10000,
@@ -160,10 +159,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 18),
-                _DailyGoalCard(
-                  goal: dailyGoal,
-                  remaining: dailyRemaining,
-                ),
+                _DailyGoalCard(goal: dailyGoal, remaining: dailyRemaining),
                 const SizedBox(height: 18),
                 _WeeklyProgressCard(
                   steps: weekSteps,
@@ -221,13 +217,7 @@ class _HomeHeader extends StatelessWidget {
             ),
           ),
         ),
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.settings_outlined),
-          color: _textMuted,
-          iconSize: 28,
-          tooltip: 'Seaded',
-        ),
+        const SizedBox(width: 48),
       ],
     );
   }

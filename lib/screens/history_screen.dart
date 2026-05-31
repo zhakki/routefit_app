@@ -120,13 +120,7 @@ class _HistoryHeader extends StatelessWidget {
             ),
           ),
         ),
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.settings_outlined),
-          color: Colors.white,
-          iconSize: 28,
-          tooltip: 'Seaded',
-        ),
+        const SizedBox(width: 48),
       ],
     );
   }
