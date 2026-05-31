@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 import 'settings_screen.dart';
+import 'login_screen.dart';
 
 const _background = Color(0xFF101415);
 const _cardColor = Color(0xE6101415);
@@ -240,8 +241,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Oled välja logitud')),
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
     );
   }
 

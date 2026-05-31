@@ -5,18 +5,23 @@ import 'package:provider/provider.dart';
 import 'package:routefit_app/providers/tracking_provider.dart';
 
 import 'firebase_options.dart';
-import 'screens/login_screen.dart';
 import 'theme/app_theme.dart';
+import 'widgets/auth_gate.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await dotenv.load(fileName: ".env");
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => TrackingProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => TrackingProvider()),
+      ],
       child: const RouteFitApp(),
     ),
   );
@@ -31,7 +36,7 @@ class RouteFitApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'RouteFit',
       theme: buildRouteFitTheme(),
-      home: const LoginScreen(),
+      home: const AuthGate(),
     );
   }
 }
