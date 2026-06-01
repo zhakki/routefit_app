@@ -6,7 +6,6 @@ import 'home_screen.dart';
 import 'map_screen.dart';
 import 'profile_screen.dart';
 import 'statistics_screen.dart';
-import 'settings_screen.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -29,33 +28,7 @@ class _AppShellState extends State<AppShell> {
     ];
 
     return Scaffold(
-      body: Stack(
-        children: [
-          pages[_index],
-
-          if (_index != 4)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 16,
-              right: 20,
-              child: Material(
-                color: Colors.transparent,
-                child: IconButton(
-                  icon: const Icon(Icons.settings_outlined),
-                  color: Colors.white,
-                  iconSize: 32,
-                  tooltip: 'Seaded',
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const SettingsScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-        ],
-      ),
+      body: pages[_index],
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: Colors.white,

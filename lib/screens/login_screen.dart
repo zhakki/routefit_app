@@ -323,8 +323,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 34),
-                        const _BottomSignals(),
                       ],
                     ),
                   ),
@@ -581,43 +579,6 @@ class _SocialButton extends StatelessWidget {
         ),
       ),
       label: Text(label),
-    );
-  }
-}
-
-class _BottomSignals extends StatelessWidget {
-  const _BottomSignals();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _Signal(icon: Icons.speed, label: 'VELOCITY'),
-        _Signal(icon: Icons.route, label: 'TRACKING'),
-        _Signal(icon: Icons.query_stats, label: 'METRICS'),
-      ],
-    );
-  }
-}
-
-class _Signal extends StatelessWidget {
-  const _Signal({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: 0.35,
-      child: Column(
-        children: [
-          Icon(icon, color: _LoginScreenState._lime, size: 30),
-          const SizedBox(height: 10),
-          Text(label, style: _LoginScreenState._monoStyle(fontSize: 11)),
-        ],
-      ),
     );
   }
 }

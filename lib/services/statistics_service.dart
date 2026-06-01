@@ -32,13 +32,10 @@ class StatisticsService {
     final snapshot = await _userDoc(userId)
         .collection('routes')
         .where(
-      'startTime',
-      isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
-    )
-        .where(
-      'startTime',
-      isLessThan: Timestamp.fromDate(endOfDay),
-    )
+          'startTime',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
+        )
+        .where('startTime', isLessThan: Timestamp.fromDate(endOfDay))
         .get();
 
     int totalSteps = 0;
@@ -90,10 +87,7 @@ class StatisticsService {
     required String userId,
     required DateTime date,
   }) async {
-    final summary = await calculateDailySummary(
-      userId: userId,
-      date: date,
-    );
+    final summary = await calculateDailySummary(userId: userId, date: date);
 
     await saveDailySummary(summary);
 
@@ -105,14 +99,14 @@ class StatisticsService {
     required DateTime selectedDate,
   }) async {
     final List<DailyStepSummary> summaries = [];
+    final weekStart = selectedDate.subtract(
+      Duration(days: selectedDate.weekday - 1),
+    );
 
-    for (int i = 6; i >= 0; i--) {
-      final date = selectedDate.subtract(Duration(days: i));
+    for (int i = 0; i < 7; i++) {
+      final date = weekStart.add(Duration(days: i));
 
-      final summary = await calculateDailySummary(
-        userId: userId,
-        date: date,
-      );
+      final summary = await calculateDailySummary(userId: userId, date: date);
 
       summaries.add(summary);
     }
@@ -121,31 +115,19 @@ class StatisticsService {
   }
 
   int calculateTotalWeeklySteps(List<DailyStepSummary> summaries) {
-    return summaries.fold(
-      0,
-          (total, item) => total + item.totalSteps,
-    );
+    return summaries.fold(0, (total, item) => total + item.totalSteps);
   }
 
   double calculateTotalWeeklyDistance(List<DailyStepSummary> summaries) {
-    return summaries.fold(
-      0.0,
-          (total, item) => total + item.distanceKm,
-    );
+    return summaries.fold(0.0, (total, item) => total + item.distanceKm);
   }
 
   double calculateTotalWeeklyCalories(List<DailyStepSummary> summaries) {
-    return summaries.fold(
-      0.0,
-          (total, item) => total + item.calories,
-    );
+    return summaries.fold(0.0, (total, item) => total + item.calories);
   }
 
   int calculateTotalWeeklyDuration(List<DailyStepSummary> summaries) {
-    return summaries.fold(
-      0,
-          (total, item) => total + item.durationSeconds,
-    );
+    return summaries.fold(0, (total, item) => total + item.durationSeconds);
   }
 
   int calculateCompletedGoalDays(List<DailyStepSummary> summaries) {

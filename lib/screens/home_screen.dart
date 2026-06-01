@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../models/daily_step_summary.dart';
 import '../models/route_model.dart';
 import '../services/route_service.dart';
 import '../services/statistics_service.dart';
@@ -31,6 +32,7 @@ class HomeScreen extends StatelessWidget {
         dailyGoal: 10000,
         weekSteps: 0,
         weekGoal: 70000,
+        weeklySummaries: [],
         lastRoute: null,
       );
     }
@@ -63,6 +65,7 @@ class HomeScreen extends StatelessWidget {
       dailyGoal: dailySummary.stepGoal,
       weekSteps: weekSteps,
       weekGoal: weekGoal,
+      weeklySummaries: weeklySummaries,
       lastRoute: routes.isNotEmpty ? routes.first : null,
     );
   }
@@ -106,6 +109,7 @@ class HomeScreen extends StatelessWidget {
               dailyGoal: 10000,
               weekSteps: 0,
               weekGoal: 70000,
+              weeklySummaries: [],
               lastRoute: null,
             );
 
@@ -165,6 +169,7 @@ class HomeScreen extends StatelessWidget {
                   steps: weekSteps,
                   goal: weekGoal,
                   remaining: weekRemaining,
+                  weeklySummaries: data.weeklySummaries,
                 ),
                 const SizedBox(height: 18),
                 if (data.lastRoute != null)
@@ -188,6 +193,7 @@ class _HomeDashboardData {
     required this.dailyGoal,
     required this.weekSteps,
     required this.weekGoal,
+    required this.weeklySummaries,
     required this.lastRoute,
   });
 
@@ -195,6 +201,7 @@ class _HomeDashboardData {
   final int dailyGoal;
   final int weekSteps;
   final int weekGoal;
+  final List<DailyStepSummary> weeklySummaries;
   final RouteModel? lastRoute;
 }
 
@@ -258,16 +265,21 @@ class _WeeklyProgressCard extends StatelessWidget {
     required this.steps,
     required this.goal,
     required this.remaining,
+    required this.weeklySummaries,
   });
 
   final int steps;
   final int goal;
   final int remaining;
+  final List<DailyStepSummary> weeklySummaries;
 
   @override
   Widget build(BuildContext context) {
-    const values = [0.62, 0.78, 0.48, 0.94, 0.0, 0.0, 0.0];
     const days = ['E', 'T', 'K', 'N', 'R', 'L', 'P'];
+    final values = _weeklyChartValues(weeklySummaries);
+    final todayIndex = DateTime.now().weekday - 1;
+    final passedDays = DateTime.now().weekday;
+    final averageSteps = passedDays > 0 ? (steps / passedDays).round() : 0;
 
     return _GlassCard(
       padding: const EdgeInsets.fromLTRB(26, 26, 26, 28),
@@ -282,26 +294,6 @@ class _WeeklyProgressCard extends StatelessWidget {
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF334D16),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: const Text(
-                  '3 päeva\njäänud',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: _lime,
-                    fontSize: 18,
-                    height: 1.25,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -328,8 +320,11 @@ class _WeeklyProgressCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 18),
-              const Expanded(
-                child: _InsetStatCard(label: 'PÄEVA KESKMINE', value: '5 266'),
+              Expanded(
+                child: _InsetStatCard(
+                  label: 'PÄEVA KESKMINE',
+                  value: _formatCompact(averageSteps),
+                ),
               ),
             ],
           ),
@@ -350,7 +345,9 @@ class _WeeklyProgressCard extends StatelessWidget {
                         height: 68 * values[index],
                         decoration: BoxDecoration(
                           color: active
-                              ? (index == 3 ? _lime : const Color(0xFF3C5518))
+                              ? (index == todayIndex
+                                    ? _lime
+                                    : const Color(0xFF3C5518))
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(5),
                         ),
@@ -359,7 +356,7 @@ class _WeeklyProgressCard extends StatelessWidget {
                       Text(
                         days[index],
                         style: TextStyle(
-                          color: index == 3 ? _lime : _textMuted,
+                          color: index == todayIndex ? _lime : _textMuted,
                           fontSize: 12,
                           fontWeight: FontWeight.w900,
                         ),
@@ -374,6 +371,21 @@ class _WeeklyProgressCard extends StatelessWidget {
       ),
     );
   }
+}
+
+List<double> _weeklyChartValues(List<DailyStepSummary> summaries) {
+  return List.generate(7, (index) {
+    if (index >= summaries.length) {
+      return 0.0;
+    }
+
+    final summary = summaries[index];
+    if (summary.stepGoal <= 0) {
+      return 0.0;
+    }
+
+    return (summary.totalSteps / summary.stepGoal).clamp(0.0, 1.0).toDouble();
+  });
 }
 
 class _LastRouteCard extends StatelessWidget {
