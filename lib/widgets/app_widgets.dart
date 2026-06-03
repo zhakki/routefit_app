@@ -326,29 +326,23 @@ class PrimaryRouteButton extends StatelessWidget {
 }
 
 class RouteFitLogo extends StatelessWidget {
-  const RouteFitLogo({super.key});
+  const RouteFitLogo({this.textAlign = TextAlign.center, super.key});
+
+  final TextAlign textAlign;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            gradient: const LinearGradient(
-              colors: [RouteFitColors.primaryDark, RouteFitColors.accent],
-            ),
-          ),
-          child: const Icon(Icons.route, color: Colors.white, size: 32),
-        ),
-        const SizedBox(width: 14),
-        const Text(
-          'RouteFit',
-          style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900),
-        ),
-      ],
+    return Text(
+      'RouteFit',
+      textAlign: textAlign,
+      style: const TextStyle(
+        color: RouteFitColors.trackingLime,
+        fontSize: 28,
+        fontStyle: FontStyle.italic,
+        fontWeight: FontWeight.w900,
+        decoration: TextDecoration.none,
+        letterSpacing: 0,
+      ),
     );
   }
 }

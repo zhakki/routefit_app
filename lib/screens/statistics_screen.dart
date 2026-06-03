@@ -7,6 +7,7 @@ import '../models/daily_step_summary.dart';
 import '../models/route_model.dart';
 import '../services/route_service.dart';
 import '../services/statistics_service.dart';
+import '../widgets/app_widgets.dart';
 
 const _background = Color(0xFF0B0F10);
 const _cardColor = Color(0xFF101415);
@@ -130,9 +131,9 @@ class StatisticsScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
               children: [
                 const _StatisticsHeader(),
-                const SizedBox(height: 34),
+                const SizedBox(height: 42),
                 const _TitleRow(),
-                const SizedBox(height: 18),
+                const SizedBox(height: 24),
                 _WeeklyActivityCard(data: data),
                 const SizedBox(height: 18),
                 _MetricGrid(data: data),
@@ -218,16 +219,7 @@ class _StatisticsHeader extends StatelessWidget {
       children: [
         const SizedBox(width: 48),
         const Expanded(
-          child: Text(
-            'RouteFit',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: _lime,
-              fontSize: 28,
-              fontStyle: FontStyle.italic,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
+          child: RouteFitLogo(),
         ),
         const SizedBox(width: 48),
       ],
@@ -240,63 +232,16 @@ class _TitleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Nädala\naktiivsus',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  height: 1.15,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'SINU TEGELIKUD\nANDMED',
-                style: TextStyle(
-                  color: _textMuted,
-                  fontSize: 16,
-                  height: 1.45,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
-        ),
-        _GlassCard(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          radius: 14,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: const BoxDecoration(
-                  color: _lime,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(color: Color(0x8835F46E), blurRadius: 12),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'FIREBASE\nSÜNKROON',
-                style: TextStyle(
-                  color: _lime,
-                  fontSize: 14,
-                  height: 1.25,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
+        Text(
+          'Nädala aktiivsus',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 32,
+            height: 1.15,
+            fontWeight: FontWeight.w900,
           ),
         ),
       ],

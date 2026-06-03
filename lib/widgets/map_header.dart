@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'app_widgets.dart';
 
 class MapHeader extends StatelessWidget {
   const MapHeader({super.key});
@@ -17,17 +18,7 @@ class MapHeader extends StatelessWidget {
         children: [
           const SizedBox(width: 48),
           const Expanded(
-            child: Text(
-              'RouteFit',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 34,
-                fontStyle: FontStyle.italic,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0,
-              ),
-            ),
+            child: RouteFitLogo(),
           ),
           const SizedBox(width: 48),
         ],

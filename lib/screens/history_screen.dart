@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/route_model.dart';
 import '../services/route_service.dart';
 import '../utils/distance_formatter.dart';
+import '../widgets/app_widgets.dart';
 import 'route_detail_screen.dart';
 
 const _background = Color(0xFF101415);
@@ -108,17 +109,7 @@ class _HistoryHeader extends StatelessWidget {
       children: [
         const SizedBox(width: 48),
         const Expanded(
-          child: Text(
-            'RouteFit',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: _lime,
-              fontSize: 28,
-              fontStyle: FontStyle.italic,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 0,
-            ),
-          ),
+          child: RouteFitLogo(),
         ),
         const SizedBox(width: 48),
       ],

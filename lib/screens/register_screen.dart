@@ -111,18 +111,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Text(
-                          'RouteFit',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: _RegisterStyle.lime,
-                            fontSize: 50,
-                            height: 1,
-                            fontStyle: FontStyle.italic,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0,
-                          ),
-                        ),
+                        const RouteFitLogo(),
                         const SizedBox(height: 82),
                         const Text(
                           'Loo konto',
