@@ -31,8 +31,8 @@ The application combines:
 - User login and logout
 - Firebase Authentication integration
 - Automatic Firestore profile creation after registration
-![register_screen](image.png)
-![register_screen](image-5.png)
+![register_screen](register_screen.png)
+![login_screen](login_screen.png)
 
 
 ### User Profile
@@ -45,7 +45,7 @@ The application combines:
   - location permission preference
   - route saving preference
   - daily step goal
-  ![profile_screen](image-1.png)
+  ![profile_screen](profile_screen.png)
 
 ### Route Tracking
 
@@ -58,7 +58,7 @@ The application combines:
 - Save completed route to Firestore
 - Save route GPS points as a subcollection
 
-![map_screen](image-2.png)
+![map_screen](map_screen.png)
 
 ### Route History
 
@@ -68,14 +68,14 @@ The application combines:
 - Edit route title
 - Save updated route title to Firestore
 
-![history_screen](image-3.png)
+![history_screen](history_screen.png)
 
 ### Result Screen
 
 - Show completed route summary
 - Display distance, duration, steps, calories and average speed
 - Inform user that the route was saved to history
-![Result Screen](image-6.png)
+![result_Screen](result_Screen.png)
 
 ### Statistics
 
