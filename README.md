@@ -28,10 +28,13 @@ The application combines:
 ### Authentication
 
 - User registration with email and password
+- Google Sign-In
 - User login and logout
 - Firebase Authentication integration
 - Automatic Firestore profile creation after registration
+
 ![register_screen](screenshots/register_screen.png)
+
 ![login_screen](screenshots/login_screen.png)
 
 
@@ -45,7 +48,8 @@ The application combines:
   - location permission preference
   - route saving preference
   - daily step goal
-  ![profile_screen](screenshots/profile_screen.png)
+
+![profile_screen](screenshots/profile_screen.png)
 
 ### Route Tracking
 
@@ -75,6 +79,7 @@ The application combines:
 - Show completed route summary
 - Display distance, duration, steps, calories and average speed
 - Inform user that the route was saved to history
+
 ![result_screen](screenshots/result_screen.png)
 
 ### Statistics
@@ -348,7 +353,6 @@ The login screen allows users to sign in with email and password using Firebase 
 
 The registration screen creates a new Firebase Authentication user and automatically creates a Firestore user profile with default settings.
 
-
 ### Home Screen
 
 The home screen displays current activity, daily goal progress, weekly progress, and the latest saved route.
@@ -403,9 +407,6 @@ The statistics screen calculates and displays weekly activity statistics based o
 
 ## Future Improvements
 
-## Future Improvements
-
-- Add Google Sign-In integration
 - Add Apple Sign-In integration
 - Integrate Google Fit / Health Connect
 - Integrate Samsung Health
@@ -477,23 +478,35 @@ Rakendus kasutab Firebase Authenticationit kasutajate haldamiseks ning Cloud Fir
 ## Team Roles
 
 ### Zinaida Romanova
-- UI/UX design
-- Screen development
-- Navigation flow
-- Application visual improvements
-- Testing and integration
+- UI/UX disain ja kasutajaliidese kujundamine
+- Rakenduse ekraanide arendamine Jetpack Compose abil
+- Navigeerimise loomine ja ekraanide ühendamine
+- Rakenduse visuaalse stiili ja kasutajakogemuse parandamine
+- README dokumentatsiooni koostamine
+- Rakenduse ekraanipiltide ja esitlusmaterjalide ettevalmistamine
+- Projekti demonstreerimise video salvestamine
+- Funktsionaalsuse testimine ja vigade kontrollimine
+- Integratsiooni testimine pärast merge'e
 
 ### Margus Apinis
 - Route tracking functionality
-- Data storage and services
+- Google Maps
+- GPS-jälgimine sammude lugemine
+- marsruutide jälgimise loogika
+- Integratsiooni testimine pärast merge'e
+- Osalemine projekti arhitektuuri ja kasutajaliidese planeerimisel
+- Funktsionaalsuse testimine ja vigade kontrollimine
 - Navigation flow
 - Testing and integration
 
 ### Ilona Žakovitš
-- Firebase integration
-- Authentication features
-- Additional functionality
--
+- Firebase Authentication
+- Firestore integratsioon
+- Kasutajaandmete, seadete, marsruutide, tulemuste ja statistika andmete haldamineAndmebaasi ühendamine Jetpack Compose kasutajaliidesega
+- Funktsionaalsuse testimine ja vigade kontrollimine
+- Andmete salvestamise, laadimise, uuendamise ja vormindamise loogika arendamine
+- Reaalsete andmete kuvamine olemasolevas UI/UX disainis ilma visuaalset stiili muutmata
+- Laadimisolekute, veateadete ja tühjade andmete kuvamise lahendamine
 
 ## Development Process
 
