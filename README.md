@@ -462,6 +462,7 @@ Tested functionality:
 ## Team Work
 
 This project was developed as a team project for a mobile application development course.
+Most development discussions, arguments, and decisions took place in Teams chat.
 
 Main responsibility areas:
 
