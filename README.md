@@ -508,13 +508,17 @@ Rakendus kasutab Firebase Authenticationit kasutajate haldamiseks ning Cloud Fir
 - Testing and integration
 
 ### Ilona Žakovitš
-- Firebase Authentication
-- Firestore integratsioon
-- Kasutajaandmete, seadete, marsruutide, tulemuste ja statistika andmete haldamineAndmebaasi ühendamine Jetpack Compose kasutajaliidesega
-- Funktsionaalsuse testimine ja vigade kontrollimine
-- Andmete salvestamise, laadimise, uuendamise ja vormindamise loogika arendamine
-- Reaalsete andmete kuvamine olemasolevas UI/UX disainis ilma visuaalset stiili muutmata
-- Laadimisolekute, veateadete ja tühjade andmete kuvamise lahendamine
+- Initial project setup
+- GitHub repository setup
+- Project structure preparation for teamwork
+- Firebase Authentication setup
+- Firestore Database connection
+- User registration and login logic
+- Google Sign-In implementation
+- User profile data management
+- Data models and repository layer preparation
+- UI and database integration
+- Data saving and displaying tests
 
 ## Development Process
 
