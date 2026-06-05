@@ -233,6 +233,13 @@ lib/
 ```
 
 ---
+## Firebase Sctructure 
+
+
+<img width="2002" height="991" alt="image" src="https://github.com/user-attachments/assets/505e2457-5fdb-4358-ba46-5d3d71eb0902" />
+
+<img width="2047" height="862" alt="image" src="https://github.com/user-attachments/assets/a5af637b-97ba-48d4-b202-9751c92819ca" />
+
 
 ## Setup Instructions
 
