@@ -235,6 +235,36 @@ lib/
 ---
 ## Firebase Sctructure 
 
+```
+Firebase Authentication
+ └── uid, email, password 
+```
+### Firestore
+
+```
+users
+ └── userId
+      ├── uid
+      ├── email
+      ├── fullName
+      ├── weightKg
+      ├── createdAt
+
+routes
+ └── routeId
+      ├── userId
+      ├── title
+      ├── startTime
+      ├── endTime
+      ├── distanceKm
+      ├── durationSeconds
+      ├── steps
+      ├── calories
+      ├── averageSpeed
+      ├── activityType
+      ├── points
+      └── createdAt
+```
 
 <img width="2002" height="991" alt="image" src="https://github.com/user-attachments/assets/505e2457-5fdb-4358-ba46-5d3d71eb0902" />
 
