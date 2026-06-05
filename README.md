@@ -497,27 +497,31 @@ Rakendus kasutab Firebase Authenticationit kasutajate haldamiseks ning Cloud Fir
 - Integratsiooni testimine pärast merge'e
 
 ### Margus Apinis
-- Route tracking functionality
-- Google Maps
-- GPS-jälgimine sammude lugemine
-- marsruutide jälgimise loogika
-- Integratsiooni testimine pärast merge'e
-- Osalemine projekti arhitektuuri ja kasutajaliidese planeerimisel
-- Funktsionaalsuse testimine ja vigade kontrollimine
-- Navigation flow
-- Testing and integration
+
+- Google Maps integration
+- Geolocation
+- Background / locked screen tracking
+- Permission handling for geolocation and background tracking
+- Logic for starting, pausing, continuing, and finishing a route track
+- Transmitting the route tracking control signals for step counting
+- Collecting and calculating of basic route data
+- Drawing the route on a map
+- Integration and merging different parts of the application
+-  Functionality testing and debugging
 
 ### Ilona Žakovitš
+
 - Initial project setup
 - GitHub repository setup
 - Project structure preparation for teamwork
 - Firebase Authentication setup
+- Google Sign-In implementation
 - Firestore Database connection
 - User registration and login logic
-- Google Sign-In implementation
 - User profile data management
 - Data models and repository layer preparation
 - UI and database integration
+- Step counting integration
 - Data saving and displaying tests
 
 ## Development Process
