@@ -370,18 +370,7 @@ class _BrandHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Column(
       children: [
-        Text(
-          'RouteFit',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: _LoginScreenState._lime,
-            fontSize: 52,
-            height: 1,
-            fontStyle: FontStyle.italic,
-            fontWeight: FontWeight.w900,
-            fontFamily: 'Montserrat',
-          ),
-        ),
+        RouteFitLogo(),
         SizedBox(height: 18),
         SizedBox(
           width: 300,

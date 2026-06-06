@@ -8,6 +8,8 @@ import '../models/route_model.dart';
 import '../services/route_service.dart';
 import '../services/statistics_service.dart';
 import '../utils/distance_formatter.dart';
+import '../widgets/app_widgets.dart';
+import 'route_detail_screen.dart';
 
 const _background = Color(0xFF0B0F10);
 const _cardColor = Color(0xFF101415);
@@ -213,16 +215,7 @@ class _HomeHeader extends StatelessWidget {
     return Row(
       children: [
         const Expanded(
-          child: Text(
-            'RouteFit',
-            style: TextStyle(
-              color: _lime,
-              fontSize: 36,
-              fontStyle: FontStyle.italic,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 0,
-            ),
-          ),
+          child: RouteFitLogo(),
         ),
         const SizedBox(width: 48),
       ],
@@ -399,7 +392,13 @@ class _LastRouteCard extends StatelessWidget {
       padding: EdgeInsets.zero,
       child: InkWell(
         borderRadius: BorderRadius.circular(26),
-        onTap: () {},
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => RouteDetailScreen(route: route),
+            ),
+          );
+        },
         child: SizedBox(
           height: 190,
           child: Stack(

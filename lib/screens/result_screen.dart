@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../utils/distance_formatter.dart';
+import '../widgets/app_widgets.dart';
 import '../widgets/route_data.dart';
 
 class ResultScreen extends StatelessWidget {
@@ -85,17 +86,7 @@ class _ResultHeader extends StatelessWidget {
           tooltip: 'Tagasi',
         ),
         const Expanded(
-          child: Text(
-            'RouteFit',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: RouteFitColors.trackingLime,
-              fontSize: 28,
-              fontStyle: FontStyle.italic,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 0,
-            ),
-          ),
+          child: RouteFitLogo(),
         ),
         const SizedBox(width: 48),
       ],

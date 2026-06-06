@@ -77,31 +77,15 @@ class GpsIndicator extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         const Flexible(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'GPS jälgimine',
-                maxLines: 1,
-                style: TextStyle(
-                  color: RouteFitColors.trackingLime,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 0,
-                ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                'Kõrge täpsus',
-                maxLines: 1,
-                style: TextStyle(
-                  color: RouteFitColors.trackingMuted,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+          child: Text(
+            'GPS',
+            maxLines: 1,
+            style: TextStyle(
+              color: RouteFitColors.trackingLime,
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0,
+            ),
           ),
         ),
       ],

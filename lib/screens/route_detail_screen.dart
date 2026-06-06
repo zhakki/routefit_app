@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/route_model.dart';
 import '../services/route_service.dart';
 import '../utils/distance_formatter.dart';
+import '../widgets/app_widgets.dart';
 
 const _background = Color(0xFF101415);
 const _cardColor = Color(0xE6101415);
@@ -158,13 +159,15 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
   Widget build(BuildContext context) {
     final duration = Duration(seconds: widget.route.durationSeconds);
 
-    return DecoratedBox(
-      decoration: const BoxDecoration(color: _background),
-      child: SafeArea(
-        bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
-          children: [
+    return DefaultTextStyle.merge(
+      style: const TextStyle(decoration: TextDecoration.none),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(color: _background),
+        child: SafeArea(
+          bottom: false,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
+            children: [
             _DetailHeader(onBack: _goBack),
             const SizedBox(height: 34),
             const _StatusLabel(),
@@ -254,7 +257,8 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
                 ),
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -280,16 +284,7 @@ class _DetailHeader extends StatelessWidget {
           tooltip: 'Tagasi',
         ),
         const Expanded(
-          child: Text(
-            'RouteFit',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: _lime,
-              fontSize: 28,
-              fontStyle: FontStyle.italic,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
+          child: RouteFitLogo(),
         ),
         const SizedBox(width: 48),
       ],

@@ -2,14 +2,18 @@
 
 RouteFit is a cross-platform fitness and route tracking application built with Flutter.
 
-The app allows users to register, log in, track routes with GPS, save completed routes, view route history, edit profile data, and see personal activity statistics. The project uses Firebase Authentication for user accounts and Cloud Firestore for storing user profiles, settings, routes, route points, and daily summaries.
+The app allows users to register, log in, track routes with GPS, save completed routes, view route
+history, edit profile data, and see personal activity statistics. The project uses Firebase
+Authentication for user accounts and Cloud Firestore for storing user profiles, settings, routes,
+route points, and daily summaries.
 
 ---
 
 ## Project Description
 
 RouteFit is designed for users who want to track their walking or running activity.  
-The user can start a route, track distance and time, save the completed route, and later view route history and statistics.
+The user can start a route, track distance and time, save the completed route, and later view route
+history and statistics.
 
 The application combines:
 
@@ -28,9 +32,14 @@ The application combines:
 ### Authentication
 
 - User registration with email and password
+- Google Sign-In
 - User login and logout
 - Firebase Authentication integration
 - Automatic Firestore profile creation after registration
+
+![register_screen](screenshots/register_screen.png)
+
+![login_screen](screenshots/login_screen.png)
 
 ### User Profile
 
@@ -38,10 +47,12 @@ The application combines:
 - Edit name, age, weight, height and gender
 - Store profile data in Firestore
 - Save user settings:
-  - distance unit
-  - location permission preference
-  - route saving preference
-  - daily step goal
+    - distance unit
+    - location permission preference
+    - route saving preference
+    - daily step goal
+
+![profile_screen](screenshots/profile_screen.png)
 
 ### Route Tracking
 
@@ -54,6 +65,8 @@ The application combines:
 - Save completed route to Firestore
 - Save route GPS points as a subcollection
 
+![map_screen](screenshots/map_screen.png)
+
 ### Route History
 
 - View saved routes for the current user
@@ -62,23 +75,30 @@ The application combines:
 - Edit route title
 - Save updated route title to Firestore
 
+![history_screen](screenshots/history_screen.png)
+
 ### Result Screen
 
 - Show completed route summary
 - Display distance, duration, steps, calories and average speed
 - Inform user that the route was saved to history
 
+![result_screen](screenshots/result_screen.png)
+
 ### Statistics
 
 - Weekly activity overview
+- Weekly progress tracking
 - Average daily steps
 - Total weekly steps
-- Total distance
-- Total calories
+- Total distance travelled
+- Total calories burned
 - Completed daily goals
 - Recent saved routes
-- Statistics are calculated from the current user's saved routes
+- Statistics are calculated from the current user's saved routes stored in Firestore
+- Weekly activity is grouped by calendar week (Monday–Sunday)
 
+![statistics_screen](screenshots/statistics_screen.png)
 ---
 
 ## Technologies Used
@@ -217,6 +237,12 @@ lib/
 
 ---
 
+### Firestore
+
+<img width="2002" height="991" alt="image" src="https://github.com/user-attachments/assets/505e2457-5fdb-4358-ba46-5d3d71eb0902" />
+
+<img width="2047" height="862" alt="image" src="https://github.com/user-attachments/assets/a5af637b-97ba-48d4-b202-9751c92819ca" />
+
 ## Setup Instructions
 
 ### 1. Clone the repository
@@ -285,7 +311,8 @@ flutter run -d emulator-5554
 ## Firestore Security Rules
 
 The app uses user-based Firestore access.  
-Each authenticated user can access only their own profile, settings, routes, route points and daily summaries.
+Each authenticated user can access only their own profile, settings, routes, route points and daily
+summaries.
 
 ```js
 rules_version = '2';
@@ -334,11 +361,22 @@ The login screen allows users to sign in with email and password using Firebase 
 
 ### Register Screen
 
-The registration screen creates a new Firebase Authentication user and automatically creates a Firestore user profile with default settings.
+The registration screen creates a new Firebase Authentication user and automatically creates a
+Firestore user profile with default settings.
 
 ### Home Screen
 
-The home screen displays current activity overview, daily step goal progress, weekly progress and last saved route.
+The home screen displays current activity, daily goal progress, weekly progress, and the latest
+saved route.
+
+Features:
+
+- Daily step goal progress
+- Weekly progress overview
+- Remaining daily steps
+- Latest saved route
+- Quick access to route details
+- Start a new route
 
 ### Map Screen
 
@@ -369,28 +407,36 @@ The statistics screen calculates and displays weekly activity statistics based o
 
 ## Current Limitations
 
-- Step counting may not work on Android emulator because the emulator usually does not support a real step counter sensor.
+- Step counting may not work correctly on Android emulators because most emulators do not provide a
+  real step counter sensor.
 - On emulator, saved routes may have `0` steps.
-- GPS route distance is best tested on a real physical device.
-- Google and Apple sign-in buttons are currently UI placeholders.
-- Pause/resume logic can be improved in the future.
-- Route map preview on the detail screen can be improved later.
+- GPS tracking accuracy is best tested on a physical device.
+- Google and Apple sign-in buttons are currently UI placeholders and are not connected to
+  authentication services.
+- Step statistics are currently based on routes recorded within the application and are not
+  synchronized with Google Fit, Samsung Health, - or Health Connect.
+- Application language switching is not yet implemented.
+- Some settings are still under development and may be expanded in future versions.
+- Route map preview and route management features can be further improved in future releases.
 
 ---
 
 ## Future Improvements
 
-- Add real Google Sign-In
-- Add Apple Sign-In
-- Add route deletion
-- Add route map preview on route detail screen
-- Improve pause and resume tracking
+- Add Apple Sign-In integration
+- Integrate Google Fit / Health Connect
+- Integrate Samsung Health
+- Add manual step entry
+- Add route deletion and editing
+- Add route map preview on the route detail screen
 - Improve background GPS tracking
 - Add push notifications
 - Add avatar upload with Firebase Storage
-- Add more detailed achievements
+- Add language selection
+- Add more detailed achievements and badges
 - Add monthly and yearly statistics
-- Improve route filtering in history
+- Improve route filtering and search in history
+- Add route sharing features
 
 ---
 
@@ -424,6 +470,7 @@ Tested functionality:
 ## Team Work
 
 This project was developed as a team project for a mobile application development course.
+Most development discussions, arguments, and decisions took place in Teams chat.
 
 Main responsibility areas:
 
@@ -440,15 +487,74 @@ Main responsibility areas:
 
 ## Short Description in Estonian
 
-RouteFit on Flutteriga loodud mobiilirakendus, mis võimaldab kasutajal registreeruda, sisse logida, jälgida GPS-i abil oma liikumismarsruuti, salvestada marsruute Firebase Firestore andmebaasi ning vaadata isiklikku ajalugu ja statistikat.
+RouteFit on Flutteriga loodud mobiilirakendus, mis võimaldab kasutajal registreeruda, sisse logida,
+jälgida GPS-i abil oma liikumismarsruuti, salvestada marsruute Firebase Firestore andmebaasi ning
+vaadata isiklikku ajalugu ja statistikat.
 
-Rakendus kasutab Firebase Authenticationit kasutajate haldamiseks ning Cloud Firestore'i profiili, seadete, marsruutide, marsruudipunktide ja päevakokkuvõtete salvestamiseks.
+Rakendus kasutab Firebase Authenticationit kasutajate haldamiseks ning Cloud Firestore'i profiili,
+seadete, marsruutide, marsruudipunktide ja päevakokkuvõtete salvestamiseks.
 
 ---
 
+## Team Roles
+
+### Zinaida Romanova
+
+- UI/UX design
+- Developing application screens using Jetpack Compose
+- Creating navigation and connecting screens
+- Improving the visual style and user experience of the application
+- Writing README documentation
+- Preparing application screenshots and presentation materials
+- Recording a video of the project demonstration
+- Functionality testing and bug checking
+- Integration testing after merges
+
+### Margus Apinis
+
+- Google Maps integration
+- Geolocation
+- Background / locked screen tracking
+- Permission handling for geolocation and background tracking
+- Logic for starting, pausing, continuing, and finishing a route track
+- Transmitting the route tracking control signals for step counting
+- Collecting and calculating of basic route data
+- Drawing the route on a map
+- Integration and merging different parts of the application
+- Functionality testing and debugging
+
+### Ilona Žakovitš
+
+- Initial project setup
+- GitHub repository setup
+- Project structure preparation for teamwork
+- Firebase Authentication setup
+- Google Sign-In implementation
+- Firestore Database connection
+- User registration and login logic
+- User profile data management
+- Data models and repository layer preparation
+- UI and database integration
+- Step counting integration
+- Data saving and displaying tests
+
+## Development Process
+
+The project was developed collaboratively using GitHub.
+
+The team used:
+
+- Git and GitHub for version control
+- Feature branches and pull requests
+- Team discussions for design and technical decisions
+
+Tasks were divided according to team members' responsibilities and integrated into the shared
+repository.
+
 ## Authors
-- zhakki
-- maapin
-- geisterin
+
+- Zinaida Romanova (@geisterin)
+- Margus Apinis (@maapin)
+- Ilona Žakovitš (@zhakki)
 
 RouteFit App team project.

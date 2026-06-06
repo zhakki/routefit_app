@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
+import '../widgets/app_widgets.dart';
 import 'settings_screen.dart';
 import 'login_screen.dart';
 
@@ -516,17 +517,7 @@ class _ProfileHeader extends StatelessWidget {
       children: [
         const SizedBox(width: 48),
         const Expanded(
-          child: Text(
-            'RouteFit',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: _lime,
-              fontSize: 28,
-              fontStyle: FontStyle.italic,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 0,
-            ),
-          ),
+          child: RouteFitLogo(),
         ),
         IconButton(
           onPressed: () => Navigator.of(
