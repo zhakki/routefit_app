@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../utils/firestore_parser.dart';
+
 class RouteModel {
   final String routeId;
   final String userId;
@@ -51,39 +53,15 @@ class RouteModel {
       routeId: map['routeId'] ?? '',
       userId: map['userId'] ?? '',
       title: map['title'] ?? '',
-      startTime: _parseDateTime(map['startTime']),
-      endTime: _parseDateTime(map['endTime']),
-      distanceKm: (map['distanceKm'] ?? 0).toDouble(),
-      durationSeconds: map['durationSeconds'] ?? 0,
-      steps: map['steps'] ?? 0,
-      calories: (map['calories'] ?? 0).toDouble(),
-      averageSpeed: (map['averageSpeed'] ?? 0).toDouble(),
+      startTime: FirestoreParser.parseDateTime(map['startTime']),
+      endTime: FirestoreParser.parseDateTime(map['endTime']),
+      distanceKm: FirestoreParser.parseDouble(map['distanceKm']),
+      durationSeconds: FirestoreParser.parseInt(map['durationSeconds']),
+      steps: FirestoreParser.parseInt(map['steps']),
+      calories: FirestoreParser.parseDouble(map['calories']),
+      averageSpeed: FirestoreParser.parseDouble(map['averageSpeed']),
       activityType: map['activityType'] ?? 'walking',
-      createdAt: _parseDateTime(map['createdAt']),
+      createdAt: FirestoreParser.parseDateTime(map['createdAt']),
     );
-  }
-
-  static DateTime _parseDateTime(dynamic value) {
-    if (value == null) {
-      return DateTime.now();
-    }
-
-    if (value is Timestamp) {
-      return value.toDate();
-    }
-
-    if (value is int) {
-      return DateTime.fromMillisecondsSinceEpoch(value);
-    }
-
-    if (value is double) {
-      return DateTime.fromMillisecondsSinceEpoch(value.toInt());
-    }
-
-    if (value is String) {
-      return DateTime.tryParse(value) ?? DateTime.now();
-    }
-
-    return DateTime.now();
   }
 }

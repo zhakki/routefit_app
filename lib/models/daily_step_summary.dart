@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../utils/firestore_parser.dart';
+
 class DailyStepSummary {
   final String summaryId;
   final String userId;
@@ -47,15 +49,18 @@ class DailyStepSummary {
     return DailyStepSummary(
       summaryId: map['summaryId'] ?? '',
       userId: map['userId'] ?? '',
-      date: (map['date'] as Timestamp).toDate(),
-      totalSteps: map['totalSteps'] ?? 0,
-      stepGoal: map['stepGoal'] ?? 10000,
-      progressPercent: (map['progressPercent'] ?? 0).toDouble(),
-      calories: (map['calories'] ?? 0).toDouble(),
-      distanceKm: (map['distanceKm'] ?? 0).toDouble(),
-      durationSeconds: map['durationSeconds'] ?? 0,
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
-      updatedAt: (map['updatedAt'] as Timestamp).toDate(),
+      date: FirestoreParser.parseDateTime(map['date']),
+      totalSteps: FirestoreParser.parseInt(map['totalSteps']),
+      stepGoal: FirestoreParser.parseInt(
+        map['stepGoal'],
+        defaultValue: 10000,
+      ),
+      progressPercent: FirestoreParser.parseDouble(map['progressPercent']),
+      calories: FirestoreParser.parseDouble(map['calories']),
+      distanceKm: FirestoreParser.parseDouble(map['distanceKm']),
+      durationSeconds: FirestoreParser.parseInt(map['durationSeconds']),
+      createdAt: FirestoreParser.parseDateTime(map['createdAt']),
+      updatedAt: FirestoreParser.parseDateTime(map['updatedAt']),
     );
   }
 }
