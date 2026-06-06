@@ -13,15 +13,11 @@ void main() async {
 
   await dotenv.load(fileName: ".env");
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(
     MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => TrackingProvider()),
-      ],
+      providers: [ChangeNotifierProvider(create: (_) => TrackingProvider())],
       child: const RouteFitApp(),
     ),
   );
