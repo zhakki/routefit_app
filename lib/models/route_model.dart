@@ -51,15 +51,39 @@ class RouteModel {
       routeId: map['routeId'] ?? '',
       userId: map['userId'] ?? '',
       title: map['title'] ?? '',
-      startTime: (map['startTime'] as Timestamp).toDate(),
-      endTime: (map['endTime'] as Timestamp).toDate(),
+      startTime: _parseDateTime(map['startTime']),
+      endTime: _parseDateTime(map['endTime']),
       distanceKm: (map['distanceKm'] ?? 0).toDouble(),
       durationSeconds: map['durationSeconds'] ?? 0,
       steps: map['steps'] ?? 0,
       calories: (map['calories'] ?? 0).toDouble(),
       averageSpeed: (map['averageSpeed'] ?? 0).toDouble(),
       activityType: map['activityType'] ?? 'walking',
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
+      createdAt: _parseDateTime(map['createdAt']),
     );
+  }
+
+  static DateTime _parseDateTime(dynamic value) {
+    if (value == null) {
+      return DateTime.now();
+    }
+
+    if (value is Timestamp) {
+      return value.toDate();
+    }
+
+    if (value is int) {
+      return DateTime.fromMillisecondsSinceEpoch(value);
+    }
+
+    if (value is double) {
+      return DateTime.fromMillisecondsSinceEpoch(value.toInt());
+    }
+
+    if (value is String) {
+      return DateTime.tryParse(value) ?? DateTime.now();
+    }
+
+    return DateTime.now();
   }
 }
