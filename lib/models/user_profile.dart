@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../utils/firestore_parser.dart';
+
 class UserProfile {
   final String uid;
   final String email;
@@ -42,12 +44,12 @@ class UserProfile {
       uid: map['uid'] ?? '',
       email: map['email'] ?? '',
       fullName: map['fullName'] ?? '',
-      age: map['age'] ?? 0,
-      weightKg: (map['weightKg'] ?? 0).toDouble(),
-      heightCm: (map['heightCm'] ?? 0).toDouble(),
+      age: FirestoreParser.parseInt(map['age']),
+      weightKg: FirestoreParser.parseDouble(map['weightKg']),
+      heightCm: FirestoreParser.parseDouble(map['heightCm']),
       gender: map['gender'] ?? '',
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
-      updatedAt: (map['updatedAt'] as Timestamp).toDate(),
+      createdAt: FirestoreParser.parseDateTime(map['createdAt']),
+      updatedAt: FirestoreParser.parseDateTime(map['updatedAt']),
     );
   }
 }

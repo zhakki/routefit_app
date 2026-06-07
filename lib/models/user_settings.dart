@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../utils/firestore_parser.dart';
+
 class UserSettings {
   final String settingsId;
   final String userId;
@@ -33,13 +35,22 @@ class UserSettings {
 
   factory UserSettings.fromMap(Map<String, dynamic> map) {
     return UserSettings(
-      settingsId: map['settingsId'] ?? '',
+      settingsId: map['settingsId'] ?? 'main',
       userId: map['userId'] ?? '',
       distanceUnit: map['distanceUnit'] ?? 'km',
-      saveRoutes: map['saveRoutes'] ?? true,
-      allowLocation: map['allowLocation'] ?? true,
-      dailyStepGoal: map['dailyStepGoal'] ?? 10000,
-      updatedAt: (map['updatedAt'] as Timestamp).toDate(),
+      saveRoutes: FirestoreParser.parseBool(
+        map['saveRoutes'],
+        defaultValue: true,
+      ),
+      allowLocation: FirestoreParser.parseBool(
+        map['allowLocation'],
+        defaultValue: true,
+      ),
+      dailyStepGoal: FirestoreParser.parseInt(
+        map['dailyStepGoal'],
+        defaultValue: 10000,
+      ),
+      updatedAt: FirestoreParser.parseDateTime(map['updatedAt']),
     );
   }
 }

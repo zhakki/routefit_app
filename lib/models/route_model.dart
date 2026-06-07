@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../utils/firestore_parser.dart';
+
 class RouteModel {
   final String routeId;
   final String userId;
@@ -51,15 +53,15 @@ class RouteModel {
       routeId: map['routeId'] ?? '',
       userId: map['userId'] ?? '',
       title: map['title'] ?? '',
-      startTime: (map['startTime'] as Timestamp).toDate(),
-      endTime: (map['endTime'] as Timestamp).toDate(),
-      distanceKm: (map['distanceKm'] ?? 0).toDouble(),
-      durationSeconds: map['durationSeconds'] ?? 0,
-      steps: map['steps'] ?? 0,
-      calories: (map['calories'] ?? 0).toDouble(),
-      averageSpeed: (map['averageSpeed'] ?? 0).toDouble(),
+      startTime: FirestoreParser.parseDateTime(map['startTime']),
+      endTime: FirestoreParser.parseDateTime(map['endTime']),
+      distanceKm: FirestoreParser.parseDouble(map['distanceKm']),
+      durationSeconds: FirestoreParser.parseInt(map['durationSeconds']),
+      steps: FirestoreParser.parseInt(map['steps']),
+      calories: FirestoreParser.parseDouble(map['calories']),
+      averageSpeed: FirestoreParser.parseDouble(map['averageSpeed']),
       activityType: map['activityType'] ?? 'walking',
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
+      createdAt: FirestoreParser.parseDateTime(map['createdAt']),
     );
   }
 }
