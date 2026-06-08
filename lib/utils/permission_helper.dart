@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:location/location.dart';
+import 'package:permission_handler/permission_handler.dart' as permission_handler;
 
 class PermissionHelper {
   static const _background = Color(0xFF101415);
@@ -8,19 +9,37 @@ class PermissionHelper {
   static const _textMuted = Color(0xFFD0D6C9);
 
   static Future<bool> requestBackgroundLocationPermission(
-    BuildContext context,
-  ) async {
-    // Check current background location permission status
-    var status = await Permission.locationAlways.status;
+      BuildContext context,
+      ) async {
+    final location = Location();
 
-    if (status.isGranted) {
+    var serviceEnabled = await location.serviceEnabled();
+
+    if (!serviceEnabled) {
+      serviceEnabled = await location.requestService();
+
+      if (!serviceEnabled) {
+        return false;
+      }
+    }
+
+    var permissionStatus = await location.hasPermission();
+
+    if (permissionStatus == PermissionStatus.granted ||
+        permissionStatus == PermissionStatus.grantedLimited) {
       return true;
     }
 
-    // If not granted, show a dialog explaining why we need it
+    permissionStatus = await location.requestPermission();
+
+    if (permissionStatus == PermissionStatus.granted ||
+        permissionStatus == PermissionStatus.grantedLimited) {
+      return true;
+    }
+
     if (!context.mounted) return false;
 
-    bool? proceed = await showDialog<bool>(
+    final proceed = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
@@ -143,23 +162,28 @@ class PermissionHelper {
     );
 
     if (proceed == true) {
-      // This takes the user to the system app settings page
-      await openAppSettings();
+      await permission_handler.openAppSettings();
 
-      // After they come back, check again
-      status = await Permission.locationAlways.status;
-      return status.isGranted;
+      await Future.delayed(const Duration(seconds: 1));
+
+      permissionStatus = await location.hasPermission();
+
+      return permissionStatus == PermissionStatus.granted ||
+          permissionStatus == PermissionStatus.grantedLimited;
     }
 
     return false;
   }
 
   static Future<bool> requestActivityRecognitionPermission() async {
-    var status = await Permission.activityRecognition.status;
+    var status =
+    await permission_handler.Permission.activityRecognition.status;
+
     if (status.isGranted) {
       return true;
     }
-    status = await Permission.activityRecognition.request();
+
+    status = await permission_handler.Permission.activityRecognition.request();
     return status.isGranted;
   }
 }
