@@ -465,6 +465,17 @@ Tested functionality:
 - result screen
 - statistics loading from Firebase
 
+### iOS Testing
+
+The iOS version was tested on the iPhone Simulator.  
+The app launches successfully, Google Maps opens, location is detected, and route tracking can be
+started.  
+Testing on a real iPhone was not completed yet, because physical iOS device deployment requires  
+additional setup, such as Apple signing, provisioning profiles,  
+trusted device access, Firebase iOS configuration, and Google Maps iOS API key restrictions.
+
+Testing on a real iOS device may be a separate task in the future.
+
 ---
 
 ## Team Work
