@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../utils/firestore_parser.dart';
+
 class RoutePoint {
   final String pointId;
   final String routeId;
@@ -35,11 +37,11 @@ class RoutePoint {
     return RoutePoint(
       pointId: map['pointId'] ?? '',
       routeId: map['routeId'] ?? '',
-      latitude: (map['latitude'] ?? 0).toDouble(),
-      longitude: (map['longitude'] ?? 0).toDouble(),
-      accuracy: (map['accuracy'] ?? 0).toDouble(),
-      altitude: (map['altitude'] ?? 0).toDouble(),
-      timestamp: (map['timestamp'] as Timestamp).toDate(),
+      latitude: FirestoreParser.parseDouble(map['latitude']),
+      longitude: FirestoreParser.parseDouble(map['longitude']),
+      accuracy: FirestoreParser.parseDouble(map['accuracy']),
+      altitude: FirestoreParser.parseDouble(map['altitude']),
+      timestamp: FirestoreParser.parseDateTime(map['timestamp']),
     );
   }
 }
