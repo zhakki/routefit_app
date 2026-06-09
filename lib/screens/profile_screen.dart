@@ -15,6 +15,22 @@ const _green = Color(0xFF35F46E);
 const _textMuted = Color(0xFFD0D6C9);
 const _textDim = Color(0xFF8B948B);
 
+String _normalizeGender(String? value) {
+  return switch (value?.trim()) {
+    'Naine' || 'female' => 'female',
+    'Mees' || 'male' => 'male',
+    'Muu' || 'other' => 'other',
+    _ => '',
+  };
+}
+
+String? _genderDropdownValue(String value) {
+  return switch (value) {
+    'female' || 'male' || 'other' => value,
+    _ => null,
+  };
+}
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -104,7 +120,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ? ''
             : profile!.heightCm.toStringAsFixed(1);
         _gender = profile?.gender.isNotEmpty == true
-            ? profile!.gender
+            ? _normalizeGender(profile!.gender)
             : '';
 
         _distanceUnit = (settings?.distanceUnit ?? 'km').toUpperCase();
@@ -253,7 +269,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final ageController = TextEditingController(text: _age.text);
     final weightController = TextEditingController(text: _weight.text);
     final heightController = TextEditingController(text: _height.text);
-    String selectedGender = _gender;
+    String selectedGender = _normalizeGender(_gender);
 
     showDialog<void>(
       context: context,
@@ -301,7 +317,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      initialValue: selectedGender.isEmpty ? null : selectedGender,
+                      initialValue: _genderDropdownValue(selectedGender),
                       dropdownColor: const Color(0xFF191C1E),
                       decoration: const InputDecoration(
                         labelText: 'Sugu',
